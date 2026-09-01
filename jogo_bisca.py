@@ -6,6 +6,13 @@ import random
 LARGURA_CARTA = 18
 ALTURA_CARTA = 28
 
+#1 "partida" = quem conseguir vencer 4 rodadas primeiro;
+#1 "Rodada" é composto por 20 jogadas de cada (acabar o baralho);
+#Cada "jogada" é 1 carta escolhida por cada jogador para ir a mesa;
+#A "mesa" é a comparação das duas cartas jogadas;
+#A "mão" são as cartas que o jogador possui;
+#A carta "bisca" é a carta horizontal na mesa que define o naipe
+
 
 def carregar_cartas(caminho="cartas.json"):
     with open(caminho, "r", encoding="utf-8") as arquivo:
@@ -29,10 +36,10 @@ class MenuInicial:
         for dx in [-1, 0, 1]:
             for dy in [-1, 0, 1]:
                 if dx != 0 or dy != 0:
-                    self._renderizar_letreiro_bisca(x + dx, y + dy, 0) # 0 = Preto
+                    self._renderizar_letreiro_bisca(x + dx, y + dy, 0)
 
-        # 2. Desenha o letreiro principal em branco por cima
-        self._renderizar_letreiro_bisca(x, y, 7) # 7 = Branco
+        
+        self._renderizar_letreiro_bisca(x, y, 7) 
 
     def _renderizar_letreiro_bisca(self, x, y, cor):
         # B
@@ -190,13 +197,43 @@ class Jogar:
             carta["y"] = carta["origem_y"]
             self.indice_arrastando = None
 
+
+    
+    
+
+    def _inicio_jogo(self):
+        # Embaralhar as 40 cartas
+        # Distribuição e cartas, sendo uma para a "bisca"(a primeira da pilha e a última a retirar e virada para cima) e três para cada jogador
+        # Definir quem fará a primeira jogada
+
+        return
+
+    def _jogar_cartas(self):
+        # O jogador vencedor será o primeiro a jogar a carta na mesa, posteriormente o segundo jogador
+        # Chamar a função "_calc_mesa"
+        # Será chamada a função "_proximo_pescar" quando o jogador tiver menos de 3 cartas na mão e o baralho for diferente de zero                
+        return
+
+    def _calc_mesa(self):
+        # Após a jogada de cada jogador, as duas cartas na mesa serão analisadas a hierarquia delas, definindo o jogador vencedor da mesa
+        # quando decidida a de maior hierarquia e vendo qual jogador que jogou. Essas duas cartas serão somadas a sua pontuação e adicionados a pontuação do jogador
+        return
+    
+    
+    def _proximo_pescar(self):
+        # Jogador vencedor da "mesa" irá "pescar" primeiro, o segundo jogador posteriormente
+        # A carta pescada será a primeira a entrar e a última a sair
+        return
+
+        
+    
+    
             
 
 
     
-
     def update(self):
-        
+
         self._arraste_carta()
         
         
@@ -221,7 +258,7 @@ class Jogar:
         pyxel.circ(x_p2, y_p2, raio, cor_p2)
         pyxel.circb(x_p2, y_p2, raio, cor_contorno)
         
-        pyxel.text(x_p2 - 4, y_p2 - 4, "BOT", cor_texto)
+        pyxel.text(x_p2 - 3, y_p2 - 4, "BOT", cor_texto)
 
 
     def _desenhar_monte(self):

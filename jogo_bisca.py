@@ -14,23 +14,75 @@ def carregar_cartas(caminho="cartas.json"):
 
 class MenuInicial:
     def __init__(self):
-        
-
         pass
 
-    def update(self):
+    def _verificar_clique_jogar(self):
         if pyxel.btnp(pyxel.MOUSE_BUTTON_LEFT):
             if 60<=pyxel.mouse_x<=100 and 60<=pyxel.mouse_y<=70:
-                return "Jogar"
-            
+                return True
 
-
-        return "Menu Inicial"
-
-    def draw(self):
-        pyxel.cls(4)
+    def _botao_jogar(self):
         pyxel.rect(60,60, 40,10, 4)
         pyxel.text(70,62,"Jogar",7)
+
+    def _desenhar_titulo_bisca(self, x, y):
+        for dx in [-1, 0, 1]:
+            for dy in [-1, 0, 1]:
+                if dx != 0 or dy != 0:
+                    self._renderizar_letreiro_bisca(x + dx, y + dy, 0) # 0 = Preto
+
+        # 2. Desenha o letreiro principal em branco por cima
+        self._renderizar_letreiro_bisca(x, y, 7) # 7 = Branco
+
+    def _renderizar_letreiro_bisca(self, x, y, cor):
+        # B
+        pyxel.rect(x, y, 2, 7, cor)
+        pyxel.rect(x, y, 4, 1, cor)
+        pyxel.rect(x, y + 3, 4, 1, cor)
+        pyxel.rect(x, y + 6, 4, 1, cor)
+        pyxel.pset(x + 4, y + 1, cor)
+        pyxel.pset(x + 4, y + 2, cor)
+        pyxel.pset(x + 4, y + 4, cor)
+        pyxel.pset(x + 4, y + 5, cor)
+
+        # I
+        pyxel.rect(x + 6, y, 3, 1, cor)
+        pyxel.rect(x + 7, y, 1, 7, cor)
+        pyxel.rect(x + 6, y + 6, 3, 1, cor)
+
+        # S
+        pyxel.rect(x + 10, y, 5, 1, cor)
+        pyxel.rect(x + 10, y + 3, 5, 1, cor)
+        pyxel.rect(x + 10, y + 6, 5, 1, cor)
+        pyxel.pset(x + 10, y + 1, cor)
+        pyxel.pset(x + 10, y + 2, cor)
+        pyxel.pset(x + 14, y + 4, cor)
+        pyxel.pset(x + 14, y + 5, cor)
+
+        # C
+        pyxel.rect(x + 16, y, 5, 1, cor)
+        pyxel.rect(x + 16, y + 6, 5, 1, cor)
+        pyxel.rect(x + 16, y, 1, 7, cor)
+
+        # A
+        pyxel.rect(x + 22, y, 5, 1, cor)
+        pyxel.rect(x + 22, y + 3, 5, 1, cor)
+        pyxel.rect(x + 22, y, 1, 7, cor)
+        pyxel.rect(x + 26, y, 1, 7, cor)    
+
+    def update(self):
+        if self._verificar_clique_jogar():
+            return "Jogar"
+        else:
+            return "Menu Inicial"
+            
+    def draw(self):
+        pyxel.cls(4)
+        self._desenhar_titulo_bisca(66,25)
+        self._botao_jogar()
+
+      
+        
         
 
 class Jogar:
@@ -40,6 +92,8 @@ class Jogar:
         self.centro_y = 60
         self.raio_externo = 53
         self.espessura_borda = 4
+
+        self.desenhar_area=False
 
         # sorteia 4 cartas distintas: as 3 da mão + a carta rotacionada.
         self.cartas_disponiveis = carregar_cartas()
@@ -103,9 +157,11 @@ class Jogar:
             return ALTURA_CARTA, LARGURA_CARTA
         return LARGURA_CARTA, ALTURA_CARTA
 
-    def update(self):
+    def _arraste_carta(self):
+
         # de trás pra frente, para pegar a que está "por cima" primeiro
         if pyxel.btnp(pyxel.MOUSE_BUTTON_LEFT):
+            
             for i in reversed(range(len(self.cartas_mesa))):
                 carta = self.cartas_mesa[i]
                 largura, altura = self._dimensoes(carta)
@@ -117,29 +173,64 @@ class Jogar:
                     self.offset_x = pyxel.mouse_x - carta["x"]
                     self.offset_y = pyxel.mouse_y - carta["y"]
                     break
-
+        
         # Enquanto o botão continua pressionado, a carta segue o mouse
         if self.indice_arrastando is not None and pyxel.btn(pyxel.MOUSE_BUTTON_LEFT):
+            self.desenhar_area=True
+
             carta = self.cartas_mesa[self.indice_arrastando]
             carta["x"] = pyxel.mouse_x - self.offset_x
             carta["y"] = pyxel.mouse_y - self.offset_y
-
+        
         # Soltou o botão -> a carta volta para a posição original
         if self.indice_arrastando is not None and pyxel.btnr(pyxel.MOUSE_BUTTON_LEFT):
+            self.desenhar_area=False
             carta = self.cartas_mesa[self.indice_arrastando]
             carta["x"] = carta["origem_x"]
             carta["y"] = carta["origem_y"]
             self.indice_arrastando = None
 
+            
+
+
+    
+
+    def update(self):
+        
+        self._arraste_carta()
+        
+        
         return "Jogar"
+
+    def _desenhar_jogadores(self):
+        raio = 10
+        cor_contorno = 0  
+        cor_texto = 7     
+
+        
+        x_p1, y_p1 = 35, 95
+        cor_p1 = 12 
+        pyxel.circ(x_p1, y_p1, raio, cor_p1)
+        pyxel.circb(x_p1, y_p1, raio, cor_contorno)
+       
+        pyxel.text(x_p1 - 4, y_p1 - 2, "P1", cor_texto)
+
+        
+        x_p2, y_p2 = 125, 25
+        cor_p2 = 8  # Vermelho
+        pyxel.circ(x_p2, y_p2, raio, cor_p2)
+        pyxel.circb(x_p2, y_p2, raio, cor_contorno)
+        
+        pyxel.text(x_p2 - 4, y_p2 - 4, "BOT", cor_texto)
+
 
     def _desenhar_monte(self):
         # Representa o monte (baralho) virado para baixo. Como o Cards.png
         x, y = self.monte_x, self.monte_y
 
-        pyxel.rect(x, y, LARGURA_CARTA, ALTURA_CARTA, 7)                       # moldura branca externa
-        pyxel.rect(x + 1, y + 1, LARGURA_CARTA - 2, ALTURA_CARTA - 2, 8)       # moldura vermelha
-        pyxel.rect(x + 3, y + 3, LARGURA_CARTA - 6, ALTURA_CARTA - 6, 7)       # friso branco interno
+        pyxel.rect(x, y, LARGURA_CARTA, ALTURA_CARTA, 7)                      
+        pyxel.rect(x + 1, y + 1, LARGURA_CARTA - 2, ALTURA_CARTA - 2, 8)       
+        pyxel.rect(x + 3, y + 3, LARGURA_CARTA - 6, ALTURA_CARTA - 6, 7)       
 
         # Campo central com o padrão em xadrez
         campo_x, campo_y = x + 4, y + 4
@@ -164,46 +255,40 @@ class Jogar:
                 novo_y = x
                 pyxel.pset(dest_x + novo_x, dest_y + novo_y, cor)
 
-    def draw(self):
-        pyxel.cls(3)  # Fundo verde escuro (feltro externo/cenário)
-
+    def _desenhar_mesa(self):
         # Borda externa de madeira (Círculo maior)
-        pyxel.circ(self.centro_x, self.centro_y, self.raio_externo, 4)        # Madeira (Castanho)
-        pyxel.circb(self.centro_x, self.centro_y, self.raio_externo, 0)       # Contorno externo preto
-
-        # Feltro interno da mesa (Círculo menor)
+        pyxel.circ(self.centro_x, self.centro_y, self.raio_externo, 4)        
+        pyxel.circb(self.centro_x, self.centro_y, self.raio_externo, 0)     
+        
+                # Feltro interno da mesa (Círculo menor)
         raio_interno = self.raio_externo - self.espessura_borda
-        pyxel.circ(self.centro_x, self.centro_y, raio_interno, 11)           # Verde Claro
-        pyxel.circb(self.centro_x, self.centro_y, raio_interno, 3)           # Contorno interno verde escuro
+        pyxel.circ(self.centro_x, self.centro_y, raio_interno, 11)         
+        pyxel.circb(self.centro_x, self.centro_y, raio_interno, 3)  
 
-        # Tamanho do espaço para soltar carta
-        x = 85
-        y = 40
-        largura = 37
-        altura = 40
-        cores = [7,7, 11 , 11 , 11 , 11,11]  # branco e verde
+    def _area_carta_jogada(self):       
+        x, y = 85, 40
+        largura, altura = 37, 40
+        cores = [7, 7, 11, 11, 11, 11, 11] 
 
-        # Parte de cima e baixo
         for i in range(largura):
-
-            if (pyxel.frame_count // 55) % 2 == 0:
-                cor = cores[i % 7]
-            else:
-                cor = 11  # Verde
-
+            cor = cores[i % 7] if (pyxel.frame_count // 20) % 2 == 0 else 11
             pyxel.pset(x + i, y, cor)
             pyxel.pset(x + i, y + altura - 1, cor)
-
-        # Laterais
+        
+        
         for i in range(altura):
-
-            if (pyxel.frame_count // 55) % 2 == 0:
-                cor = cores[i % 7]
-            else:
-                cor = 11  # Verde
-
+            cor = cores[i % 7] if (pyxel.frame_count // 20) % 2 == 0 else 11
             pyxel.pset(x, y + i, cor)
             pyxel.pset(x + largura - 1, y + i, cor)
+
+    def draw(self):
+        pyxel.cls(3)
+
+        self._desenhar_jogadores()
+
+        self._desenhar_mesa()
+        if self.desenhar_area==True:
+            self._area_carta_jogada()
 
         # Monte (carta virada para baixo, fixa na mesa)
         self._desenhar_monte()

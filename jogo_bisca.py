@@ -104,7 +104,13 @@ class Jogar:
 
         # sorteia 4 cartas distintas: as 3 da mão + a carta rotacionada.
         self.cartas_disponiveis = carregar_cartas()
-        cartas_sorteadas = random.sample(self.cartas_disponiveis, 4)
+    
+        self.vez_jogador=0
+        self.mao_j1=[]
+        self.mao_j2=[]
+        self.carta_bisca=[]
+        self._inicio_jogo()
+        
 
         # Cada item de self.cartas_mesa é um dicionário com:
         espaco_mao = 2
@@ -117,19 +123,19 @@ class Jogar:
 
         self.cartas_mesa = [
             {
-                "sprite": cartas_sorteadas[0],
+                "sprite": self.mao_j1[0],
                 "x": x_carta1, "y": pos_y_mao,
                 "origem_x": x_carta1, "origem_y": pos_y_mao,
                 "rotacionada": False,
             },
             {
-                "sprite": cartas_sorteadas[1],
+                "sprite": self.mao_j1[1],
                 "x": x_carta2, "y": pos_y_mao,
                 "origem_x": x_carta2, "origem_y": pos_y_mao,
                 "rotacionada": False,
             },
             {
-                "sprite": cartas_sorteadas[2],
+                "sprite": self.mao_j1[2],
                 "x": x_carta3, "y": pos_y_mao,
                 "origem_x": x_carta3, "origem_y": pos_y_mao,
                 "rotacionada": False,
@@ -147,7 +153,7 @@ class Jogar:
         rot_y = self.monte_y + (ALTURA_CARTA - altura_rotacionada) // 2
 
         self.cartas_mesa.append({
-            "sprite": cartas_sorteadas[3],
+            "sprite": self.carta_bisca,
             "x": rot_x, "y": rot_y,
             "origem_x": rot_x, "origem_y": rot_y,
             "rotacionada": True,
@@ -199,14 +205,36 @@ class Jogar:
 
 
     
-    
-
     def _inicio_jogo(self):
-        # Embaralhar as 40 cartas
-        # Distribuição e cartas, sendo uma para a "bisca"(a primeira da pilha e a última a retirar e virada para cima) e três para cada jogador
-        # Definir quem fará a primeira jogada
 
-        return
+        cartas_originais = carregar_cartas()
+        
+        cartas_baralho = [{**carta, "jogador": "0", "bisca": "0"} for carta in cartas_originais]
+
+        # Embaralhando usando o método do random
+        random.shuffle(cartas_baralho)
+        cartas_baralho[-1]["bisca"]="1"
+        self.carta_bisca=cartas_baralho[-1]
+        
+
+        # Distribuindo cartas utilizando o .pop que seleciona a primeira carta do monte e remove ela
+        for _ in range(3):
+            self.mao_j1.append(cartas_baralho.pop(0))
+            self.mao_j1[_]["jogador"]="1"
+            self.mao_j2.append(cartas_baralho.pop(0))
+            self.mao_j2[_]["jogador"]="2"
+
+        print(self.mao_j1)
+        print(self.carta_bisca)
+          
+
+        # Definindo quem fará a primeira jogada
+        self.vez_jogador=random.randint(1,2)
+
+
+        return cartas_baralho
+       
+
 
     def _jogar_cartas(self):
         # O jogador vencedor será o primeiro a jogar a carta na mesa, posteriormente o segundo jogador
@@ -235,6 +263,7 @@ class Jogar:
     def update(self):
 
         self._arraste_carta()
+        
         
         
         return "Jogar"

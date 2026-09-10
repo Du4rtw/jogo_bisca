@@ -147,7 +147,7 @@ class Jogar:
             },
         ]
 
-        # carta do monte (baralho), fixa, virada para baixo 
+        # carta do monte (baralho), fixa, virada para baixo
         self.monte_x = 35
         self.monte_y = 46
 
@@ -162,9 +162,8 @@ class Jogar:
             "x": rot_x, "y": rot_y,
             "origem_x": rot_x, "origem_y": rot_y,
             "rotacionada": True,
-            "arrastavel":False,
+            "arrastavel": False,
         })
-
 
         # Controle de arraste
         self.indice_arrastando = None
@@ -181,24 +180,36 @@ class Jogar:
         self.pontuacao_j1 = 0
         self.pontuacao_j2 = 0
 
-    def _posicionar_carta_na_mesa(self, sprite, ordem):
-            # Ordem: "inicial" ou "secundaria".
-            x_base, y_base = 89, 41
-            deslocamento_x = 11  
-            deslocamento_y = 10  
+        # Pausa de debug: mostra as 2 cartas jogadas por N frames antes de limpar a mesa
+        self.pausa_frames = 0
+        self.cartas_para_remover = []
 
-            if ordem == "inicial":
-                x, y = x_base, y_base
-            else:
-                x, y = x_base + deslocamento_x, y_base + deslocamento_y
+        # Debug: se algo quebrar no cálculo da mesa, guardamos o erro aqui
+        # em vez de deixar o jogo fechar sem explicação.
+        self.erro_debug = None
 
-            self.cartas_mesa.append({
-                "sprite": sprite,
-                "x": x, "y": y,
-                "origem_x": x, "origem_y": y,
-                "rotacionada": False,
-                "arrastavel": False, 
-            })
+    def _posicionar_carta_na_mesa(self, sprite, jogador, ordem):
+        """
+        ordem: "inicial" ou "secundaria".
+        A posição depende de qual carta é essa na jogada (1ª ou 2ª),
+        não de qual jogador (1 ou 2) a jogou -- já que isso muda a cada rodada.
+        """
+        x_base, y_base = 89, 41
+        deslocamento_x = 11   # quanto a 2ª carta anda para a direita
+        deslocamento_y = 10   # quanto a 2ª carta desce
+
+        if ordem == "inicial":
+            x, y = x_base, y_base
+        else:  # "secundaria"
+            x, y = x_base + deslocamento_x, y_base + deslocamento_y
+
+        self.cartas_mesa.append({
+            "sprite": sprite,
+            "x": x, "y": y,
+            "origem_x": x, "origem_y": y,
+            "rotacionada": False,
+            "arrastavel": False,   # já jogada, não pode mais mexer
+        })
 
     def _dimensoes(self, carta):
         # Carta rotacionada 90° 
@@ -238,7 +249,7 @@ class Jogar:
             self.desenhar_area=False
             carta = self.cartas_mesa[self.indice_arrastando]
 
-            if self._dentro_area(carta["x"],carta["y"]) and self.vez_jogador == 1:
+            if self._dentro_area(carta["x"], carta["y"]) and self.vez_jogador == 1:
                 carta_jogada = self.cartas_mesa.pop(self.indice_arrastando)
                  # Remove a carta da lista de exibição para que ela não continue sendo desenhada na mão.
                 self.mao_j1 = [c for c in self.mao_j1 if c is not carta_jogada["sprite"]]
@@ -255,7 +266,7 @@ class Jogar:
     def _dentro_area(self,x,y):
         return(self.area_jogada_x <= x <= self.area_jogada_x + self.area_jogada_largura and self.area_jogada_y <= y <= self.area_jogada_y + self.area_jogada_altura)
 
-    def _bot_carta(self):
+    def _bot_escolher_carta(self):
         if not self.mao_j2:
             return None
         indice = random.randint(0, len(self.mao_j2) - 1)
@@ -293,26 +304,35 @@ class Jogar:
 
 
     def _jogar_cartas(self,carta_escolhida,jogador):
-        if self.carta_inicial is None and self.carta_secundaria is None:
-            self.jogador_inicial = self.vez_jogador
-            self.jogador_secundario = 2 if self.jogador_inicial == 1 else 1
-            """
-            operador ternario que corresponde a isso:
-            if self.jogador_inicial == 1:
-                self.jogador_secundario = 2
-            else:
-                self.jogador_secundario = 1
-            """
+        try:
+            if self.carta_inicial is None and self.carta_secundaria is None:
+                self.jogador_inicial = self.vez_jogador
+                self.jogador_secundario = 2 if self.jogador_inicial == 1 else 1
+                """
+                operador ternario que corresponde a isso:
+                if self.jogador_inicial == 1:
+                    self.jogador_secundario = 2
+                else:
+                    self.jogador_secundario = 1
+                """
 
-        if self.carta_inicial is None:
-            self.carta_inicial = carta_escolhida
-            self.vez_jogador = self.jogador_secundario
-            self._posicionar_carta_na_mesa(carta_escolhida,ordem="inicial")
+            if self.carta_inicial is None:
+                self.carta_inicial = carta_escolhida
+                self.vez_jogador = self.jogador_secundario
+                self._posicionar_carta_na_mesa(carta_escolhida, jogador, ordem="inicial")
 
-        elif self.carta_secundaria is None:
-            self.carta_secundaria = carta_escolhida
-            self._posicionar_carta_na_mesa(carta_escolhida,ordem="secundaria")
-            self._calc_mesa()
+            elif self.carta_secundaria is None:
+                self.carta_secundaria = carta_escolhida
+                self._posicionar_carta_na_mesa(carta_escolhida, jogador, ordem="secundaria")
+                self._calc_mesa()
+
+        except Exception:
+            import traceback
+            self.erro_debug = traceback.format_exc()
+            print(self.erro_debug)
+            # Mesmo com erro, deixa as cartas na mesa visíveis por um tempo
+            # em vez de travar tudo instantaneamente.
+            self.pausa_frames = 30
 
     def _calc_mesa(self):
         naipe_bisca = self.carta_bisca["naipe"]
@@ -335,9 +355,9 @@ class Jogar:
 
         self.vez_jogador = vencedor
 
-        # limpa a mesa (cartas jogadas somem) para a próxima jogada
-        self.cartas_mesa = [c for c in self.cartas_mesa if c["sprite"] not in
-                            (self.carta_inicial, self.carta_secundaria)]
+        # Guarda quais cartas devem sumir da mesa quando a pausa acabar
+        self.cartas_para_remover = [self.carta_inicial, self.carta_secundaria]
+        self.pausa_frames = 600  # 600 frames / 60 fps = 10 segundos
 
         self.carta_inicial = None
         self.carta_secundaria = None
@@ -345,6 +365,16 @@ class Jogar:
         return vencedor
     
     
+    def _atualizar_pausa(self):
+        # Chamado todo frame enquanto pausa_frames > 0
+        self.pausa_frames -= 1
+        if self.pausa_frames <= 0:
+            self.pausa_frames = 0
+            # Só agora as duas cartas jogadas somem da mesa de verdade
+            self.cartas_mesa = [c for c in self.cartas_mesa if c["sprite"] not in
+                                self.cartas_para_remover]
+            self.cartas_para_remover = []
+
     def _proximo_pescar(self):
         # Jogador vencedor da "mesa" irá "pescar" primeiro, o segundo jogador posteriormente
         # A carta pescada será a primeira a entrar e a última a sair
@@ -359,14 +389,27 @@ class Jogar:
     
     def update(self):
 
+        # Se algo já quebrou, só conta a pausa e não processa mais nada
+        # (evita que o erro se repita a cada frame).
+        if self.erro_debug is not None:
+            if self.pausa_frames > 0:
+                self.pausa_frames -= 1
+            return "Jogar"
+
+        # Enquanto estiver em pausa, só conta os frames e não processa
+        # arraste nem jogada do bot -- assim as 2 cartas ficam visíveis
+        # paradas na mesa até o tempo acabar.
+        if self.pausa_frames > 0:
+            self._atualizar_pausa()
+            return "Jogar"
+
         self._arraste_carta()
 
         # logica para o bot esperar a vez dele, so para testes no momento
         if self.vez_jogador == 2 and self.mao_j2:
-            carta_bot = self._bot_carta()
+            carta_bot = self._bot_escolher_carta()
             self._jogar_cartas(carta_bot, jogador=2)
-        
-        
+
         return "Jogar"
 
     def _desenhar_jogadores(self):
@@ -472,6 +515,19 @@ class Jogar:
                     sprite["posX"], sprite["posY"],
                     LARGURA_CARTA, ALTURA_CARTA,
                 )
+
+        # Debug: mostra o erro capturado direto na tela, sem precisar de terminal
+        if self.erro_debug is not None:
+            largura_caixa, altura_caixa = 156, 60
+            x_caixa, y_caixa = 2, 2
+            pyxel.rect(x_caixa, y_caixa, largura_caixa, altura_caixa, 0)
+            pyxel.rectb(x_caixa, y_caixa, largura_caixa, altura_caixa, 8)
+            pyxel.text(x_caixa + 4, y_caixa + 4, "ERRO (veja console tambem):", 8)
+
+            linhas = self.erro_debug.strip().split("\n")
+            ultimas_linhas = linhas[-6:]  # a parte mais útil costuma ser o final
+            for i, linha in enumerate(ultimas_linhas):
+                pyxel.text(x_caixa + 4, y_caixa + 14 + i * 7, linha[:52], 7)
 
 
 class JogoBisca:

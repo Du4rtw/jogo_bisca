@@ -157,6 +157,7 @@ class Jogar:
             "x": rot_x, "y": rot_y,
             "origem_x": rot_x, "origem_y": rot_y,
             "rotacionada": True,
+            "arrastavel":False,
         })
 
         # Controle de arraste
@@ -177,6 +178,8 @@ class Jogar:
             
             for i in reversed(range(len(self.cartas_mesa))):
                 carta = self.cartas_mesa[i]
+                if not carta.get("arrastavel",True):
+                    continue
                 largura, altura = self._dimensoes(carta)
                 if (carta["x"] <= pyxel.mouse_x <= carta["x"] + largura and
                         carta["y"] <= pyxel.mouse_y <= carta["y"] + altura):

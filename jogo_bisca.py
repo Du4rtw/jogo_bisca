@@ -13,10 +13,10 @@ ALTURA_CARTA = 28
 #A "mão" são as cartas que o jogador possui;
 #A carta "bisca" é a carta horizontal na mesa que define o naipe
 
-
 def carregar_cartas(caminho="cartas.json"):
     with open(caminho, "r", encoding="utf-8") as arquivo:
         return json.load(arquivo)
+
 
 
 class MenuInicial:
@@ -38,7 +38,6 @@ class MenuInicial:
                 if dx != 0 or dy != 0:
                     self._renderizar_letreiro_bisca(x + dx, y + dy, 0)
 
-        
         self._renderizar_letreiro_bisca(x, y, 7) 
 
     def _renderizar_letreiro_bisca(self, x, y, cor):
@@ -77,19 +76,22 @@ class MenuInicial:
         pyxel.rect(x + 22, y, 1, 7, cor)
         pyxel.rect(x + 26, y, 1, 7, cor)    
 
+
+
+
     def update(self):
         if self._verificar_clique_jogar():
             return "Jogar"
         else:
             return "Menu Inicial"
+
+
             
     def draw(self):
         pyxel.cls(4)
         self._desenhar_titulo_bisca(66,25)
         self._botao_jogar()
 
-      
-        
         
 
 class Jogar:
@@ -106,46 +108,25 @@ class Jogar:
         self.area_jogada_y = 40
         self.area_jogada_largura = 37
         self.area_jogada_altura = 40
-
-        # sorteia 4 cartas distintas: as 3 da mão + a carta rotacionada.
-        self.cartas_disponiveis = carregar_cartas()
     
         self.vez_jogador=0
         self.mao_j1=[]
         self.mao_j2=[]
         self.carta_bisca=[]
-        self._inicio_jogo()
+        self.monte = self._inicio_jogo()
         
-
-        # Cada item de self.cartas_mesa é um dicionário com:
+        # Posição dos slots das cartas da mão
         espaco_mao = 2
         pos_x_inicial = 51
         pos_y_mao = 90
-
-        x_carta1 = pos_x_inicial                                    # 51
-        x_carta2 = pos_x_inicial + LARGURA_CARTA + espaco_mao       # 71
-        x_carta3 = pos_x_inicial + 2 * (LARGURA_CARTA + espaco_mao)  # 91
-
-        self.cartas_mesa = [
-            {
-                "sprite": self.mao_j1[0],
-                "x": x_carta1, "y": pos_y_mao,
-                "origem_x": x_carta1, "origem_y": pos_y_mao,
-                "rotacionada": False,
-            },
-            {
-                "sprite": self.mao_j1[1],
-                "x": x_carta2, "y": pos_y_mao,
-                "origem_x": x_carta2, "origem_y": pos_y_mao,
-                "rotacionada": False,
-            },
-            {
-                "sprite": self.mao_j1[2],
-                "x": x_carta3, "y": pos_y_mao,
-                "origem_x": x_carta3, "origem_y": pos_y_mao,
-                "rotacionada": False,
-            },
+        self._posicoes_mao_j1 = [
+            (pos_x_inicial, pos_y_mao),
+            (pos_x_inicial + LARGURA_CARTA + espaco_mao, pos_y_mao),
+            (pos_x_inicial + 2 * (LARGURA_CARTA + espaco_mao), pos_y_mao),
         ]
+
+        self.cartas_mesa = []
+        self._sincronizar_mao_j1()
 
         # carta do monte (baralho), fixa, virada para baixo 
         self.monte_x = 35
@@ -165,7 +146,6 @@ class Jogar:
             "arrastavel":False,
         })
 
-
         # Controle de arraste
         self.indice_arrastando = None
         self.offset_x = 0
@@ -180,6 +160,23 @@ class Jogar:
         # Pontuações
         self.pontuacao_j1 = 0
         self.pontuacao_j2 = 0
+
+    def _sincronizar_mao_j1(self):
+            # Limpa a tela
+            self.cartas_mesa = [c for c in self.cartas_mesa if c.get("grupo") != "mao_j1"]
+
+            # Percorre seu número de índice
+            for indice, carta in enumerate(self.mao_j1):
+                # Busca a coordenada X e Y no slot específico
+                x, y = self._posicoes_mao_j1[indice]
+                self.cartas_mesa.append({
+                    "sprite": carta,
+                    "x": x, "y": y,
+                    "origem_x": x, "origem_y": y,
+                    "rotacionada": False,
+                    "arrastavel": True,
+                    "grupo": "mao_j1",
+                })
 
     def _posicionar_carta_na_mesa(self, sprite, ordem):
             # Ordem: "inicial" ou "secundaria".
@@ -243,6 +240,7 @@ class Jogar:
                  # Remove a carta da lista de exibição para que ela não continue sendo desenhada na mão.
                 self.mao_j1 = [c for c in self.mao_j1 if c is not carta_jogada["sprite"]]
                 # Remove a carta original da mão do jogador, comparando pela identidade do objeto.
+                self._sincronizar_mao_j1()
                 self._jogar_cartas(carta_jogada["sprite"], jogador=1)
                 # Envia a carta original para _jogar_cartas(), que irá processar a jogada do jogador 1
                
@@ -259,6 +257,7 @@ class Jogar:
         if not self.mao_j2:
             return None
         indice = random.randint(0, len(self.mao_j2) - 1)
+        # Adiconar um "timer" aqui 
         return self.mao_j2.pop(indice)
     
     def _inicio_jogo(self):
@@ -271,7 +270,6 @@ class Jogar:
         random.shuffle(cartas_baralho)
         cartas_baralho[-1]["bisca"]="1"
         self.carta_bisca=cartas_baralho[-1]
-        
 
         # Distribuindo cartas utilizando o .pop que seleciona a primeira carta do monte e remove ela
         for _ in range(3):
@@ -282,22 +280,18 @@ class Jogar:
 
         print(self.mao_j1)
         print(self.carta_bisca)
-          
 
         # Definindo quem fará a primeira jogada
         self.vez_jogador=random.randint(1,2)
 
-
         return cartas_baralho
        
-
-
     def _jogar_cartas(self,carta_escolhida,jogador):
         if self.carta_inicial is None and self.carta_secundaria is None:
             self.jogador_inicial = self.vez_jogador
             self.jogador_secundario = 2 if self.jogador_inicial == 1 else 1
             """
-            operador ternario que corresponde a isso:
+            corresponde a isso:
             if self.jogador_inicial == 1:
                 self.jogador_secundario = 2
             else:
@@ -334,39 +328,49 @@ class Jogar:
             self.pontuacao_j2 += pontuacao_mesa
 
         self.vez_jogador = vencedor
+        outro_jogador = 2 if vencedor == 1 else 1 # Se o vencedor foi o Jogador 1, o outro é o 2
 
         # limpa a mesa (cartas jogadas somem) para a próxima jogada
+        # Adiconar um "timer" aqui 
         self.cartas_mesa = [c for c in self.cartas_mesa if c["sprite"] not in
                             (self.carta_inicial, self.carta_secundaria)]
+
+
+        if len(self.monte) >= 2:
+            self._proximo_pescar(vencedor)
+            self._proximo_pescar(outro_jogador)
+        else:
+            pass
+            # acabou o monte, estatistica e quem são os vencedores
 
         self.carta_inicial = None
         self.carta_secundaria = None
 
         return vencedor
-    
-    
-    def _proximo_pescar(self):
-        # Jogador vencedor da "mesa" irá "pescar" primeiro, o segundo jogador posteriormente
-        # A carta pescada será a primeira a entrar e a última a sair
+
+    def _proximo_pescar(self,jogador):
+   
+        carta_pescada = self.monte.pop(0)
+
+        if jogador == 1:
+            self.mao_j1.append(carta_pescada)
+            self.mao_j1[-1]["jogador"] = "1"
+            self._sincronizar_mao_j1()
+        else:
+            self.mao_j2.append(carta_pescada)
+            self.mao_j2[-1]["jogador"] = "2"
         return
-
-        
-    
-    
             
-
 
     
     def update(self):
 
         self._arraste_carta()
 
-        # logica para o bot esperar a vez dele, so para testes no momento
+        # Logica para o bot esperar a vez dele
         if self.vez_jogador == 2 and self.mao_j2:
             carta_bot = self._bot_carta()
-            self._jogar_cartas(carta_bot, jogador=2)
-        
-        
+            self._jogar_cartas(carta_bot, jogador=2)        
         return "Jogar"
 
     def _desenhar_jogadores(self):
@@ -374,7 +378,6 @@ class Jogar:
         cor_contorno = 0  
         cor_texto = 7     
 
-        
         x_p1, y_p1 = 35, 95
         cor_p1 = 12 
         pyxel.circ(x_p1, y_p1, raio, cor_p1)
@@ -382,14 +385,12 @@ class Jogar:
        
         pyxel.text(x_p1 - 4, y_p1 - 2, "P1", cor_texto)
 
-        
         x_p2, y_p2 = 125, 25
         cor_p2 = 8  # Vermelho
         pyxel.circ(x_p2, y_p2, raio, cor_p2)
         pyxel.circb(x_p2, y_p2, raio, cor_contorno)
         
         pyxel.text(x_p2 - 3, y_p2 - 4, "BOT", cor_texto)
-
 
     def _desenhar_monte(self):
         # Representa o monte (baralho) virado para baixo. Como o Cards.png
@@ -426,8 +427,8 @@ class Jogar:
         # Borda externa de madeira (Círculo maior)
         pyxel.circ(self.centro_x, self.centro_y, self.raio_externo, 4)        
         pyxel.circb(self.centro_x, self.centro_y, self.raio_externo, 0)     
-        
-                # Feltro interno da mesa (Círculo menor)
+
+        # Feltro interno da mesa (Círculo menor)
         raio_interno = self.raio_externo - self.espessura_borda
         pyxel.circ(self.centro_x, self.centro_y, raio_interno, 11)         
         pyxel.circb(self.centro_x, self.centro_y, raio_interno, 3)  
@@ -442,11 +443,12 @@ class Jogar:
             pyxel.pset(x + i, y, cor)
             pyxel.pset(x + i, y + altura - 1, cor)
         
-        
         for i in range(altura):
             cor = cores[i % 7] if (pyxel.frame_count // 20) % 2 == 0 else 11
             pyxel.pset(x, y + i, cor)
             pyxel.pset(x + largura - 1, y + i, cor)
+
+
 
     def draw(self):
         pyxel.cls(3)
@@ -474,6 +476,7 @@ class Jogar:
                 )
 
 
+
 class JogoBisca:
     def __init__(self):
         pyxel.init(160, 120, title="Bisca")
@@ -493,7 +496,6 @@ class JogoBisca:
         
         
         
-
     def update(self):
         self.cenarioAtual=self.cenariosJogo[self.cenarioAtual].update()
         

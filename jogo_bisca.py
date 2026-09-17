@@ -17,6 +17,17 @@ def carregar_cartas(caminho="cartas.json"):
     with open(caminho, "r", encoding="utf-8") as arquivo:
         return json.load(arquivo)
 
+class Personagem:
+    def __init__(self,nome,pontuacao_mesa,pontuacao_raios,bot):
+        self.nome = nome
+        self.pontuacao_mesa = pontuacao_mesa
+        self.pontuacao_raios = pontuacao_raios
+        self.bot = bool(bot)
+
+    def Adicionar_Pontos(self,pontos):
+        self.pontuacao_mesa += pontos
+        return self.pontuacao_mesa
+
 
 
 class MenuInicial:
@@ -108,22 +119,24 @@ class Jogar:
         self.area_jogada_y = 40
         self.area_jogada_largura = 37
         self.area_jogada_altura = 40
+
         # Controle de arraste
         self.carta_arrastando = None
         self.offset_x = 0
         self.offset_y = 0
 
+        # Timer
         self.contador_frame=None
         self.pode_limpar=None
         self.aguardar_bot=False
         self.contador_jogada_bot=None
-    
+
+
         self.vez_jogador=0
         self.mao_j1=[]
         self.mao_j2=[]
         self.carta_bisca=[]
         self.monte = self._inicio_jogo()
-        
 
         # se o sorteio definiu o bot como o primeiro a jogar, arma o delay dele
         if self.vez_jogador == 2 and self.mao_j2:
@@ -177,6 +190,10 @@ class Jogar:
         self.pontuacao_j1 = 0
         self.pontuacao_j2 = 0
 
+        # Definições do personagem
+        self.jogador1 = Personagem("Personagem1",0,3,False)
+        self.jogador2 = Personagem("Bot",0,3,True)
+        
     def _sincronizar_mao_j1(self):
             # Limpa a tela
             self.cartas_mesa = [c for c in self.cartas_mesa if c.get("grupo") != "mao_j1"]
@@ -272,7 +289,6 @@ class Jogar:
         if not self.mao_j2:
             return None
         indice = random.randint(0, len(self.mao_j2) - 1)
-        # Adiconar um "timer" aqui 
         return self.mao_j2.pop(indice)
     
     def _inicio_jogo(self):
@@ -292,9 +308,7 @@ class Jogar:
             self.mao_j1[_]["jogador"]="1"
             self.mao_j2.append(cartas_baralho.pop(0))
             self.mao_j2[_]["jogador"]="2"
-
-        
-
+  
         # Definindo quem fará a primeira jogada
         self.vez_jogador=random.randint(1,2)
 
@@ -335,29 +349,28 @@ class Jogar:
 
         pontuacao_mesa = int(self.carta_inicial["valor"]) + int(self.carta_secundaria["valor"])
         if vencedor == 1:
-            self.pontuacao_j1 += pontuacao_mesa
+            self.jogador1.Adicionar_Pontos(pontuacao_mesa)
+            print(f"jogador1 = {self.jogador1.pontuacao_mesa}")
         else:
-            self.pontuacao_j2 += pontuacao_mesa
+             self.jogador2.Adicionar_Pontos(pontuacao_mesa)
+             print(f"jogador 2 = {self.jogador2.pontuacao_mesa} ")
 
         self.vez_jogador = vencedor
         outro_jogador = 2 if vencedor == 1 else 1 # Se o vencedor foi o Jogador 1, o outro é o 2
 
-        # limpa a mesa (cartas jogadas somem) para a próxima jogada
-        # Adiconar um "timer" aqui 
+        # timer
         self.contador_frame=pyxel.frame_count+60
-        self.pode_limpar=True
-        
-       
-
+        self.pode_limpar=True      
 
         if len(self.monte) >= 2:
             self._proximo_pescar(vencedor)
             self._proximo_pescar(outro_jogador)
         else:
-            pass
             # acabou o monte, estatistica e quem são os vencedores
+            pass
 
-        
+        #Verifica se acabou e soma pontos do raio , 0 a 4
+        self._pontuacao_raio()
 
         return vencedor
 
@@ -373,9 +386,35 @@ class Jogar:
             self.mao_j2.append(carta_pescada)
             self.mao_j2[-1]["jogador"] = "2"
         return
-            
 
-    
+    def _pontuacao_raio(self):
+        # Garantindo que acabou as cartas do monte e da mão dos dois jogadores
+        if self.monte or self.mao_j1 or self.mao_j2:
+            return
+
+        # Definindo quem ganhou o raio e vendo se terminou o jogo
+        # Mudar esses prints para futuas telas
+        if self.jogador1.pontuacao_mesa > self.jogador2.pontuacao_mesa:
+            self.jogador1.pontuacao_raios += 1
+            print(f"Jogador vencedor deste raio: {self.jogador1.nome}") 
+            print("Tela final_raio")
+            if self.jogador1.pontuacao_raios > 3:
+                print(f"Acabou o jogo, {self.jogador1.nome} tem {self.jogador1.pontuacao_raios} pontosde raio")
+                print("Tela final_Partida")
+
+        elif self.jogador2.pontuacao_mesa > self.jogador1.pontuacao_mesa:
+            self.jogador2.pontuacao_raios += 1
+            print(f"Jogador vencedor deste raio: {self.jogador2.nome}") 
+            print("Tela final_raio")
+            if self.jogador2.pontuacao_raios > 3:
+                print(f"Acabou o jogo, {self.jogador2.nome} tem {self.jogador2.pontuacao_raios} pontos de raio")
+                print("Tela final_Partida")
+        else: 
+            print("Raio empatado, não será somado pontuação") 
+            print("Novo Jogo e estatisticas")
+
+
+
     def update(self):
 
         self._arraste_carta()

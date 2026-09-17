@@ -108,12 +108,28 @@ class Jogar:
         self.area_jogada_y = 40
         self.area_jogada_largura = 37
         self.area_jogada_altura = 40
+        # Controle de arraste
+        self.carta_arrastando = None
+        self.offset_x = 0
+        self.offset_y = 0
+
+        self.contador_frame=None
+        self.pode_limpar=None
+        self.aguardar_bot=False
+        self.contador_jogada_bot=None
     
         self.vez_jogador=0
         self.mao_j1=[]
         self.mao_j2=[]
         self.carta_bisca=[]
         self.monte = self._inicio_jogo()
+        
+
+        # se o sorteio definiu o bot como o primeiro a jogar, arma o delay dele
+        if self.vez_jogador == 2 and self.mao_j2:
+            self.contador_jogada_bot = pyxel.frame_count + 30
+            self.aguardar_bot = True
+        
         
         # Posição dos slots das cartas da mão
         espaco_mao = 2
@@ -207,48 +223,47 @@ class Jogar:
 
         # de trás pra frente, para pegar a que está "por cima" primeiro
         if pyxel.btnp(pyxel.MOUSE_BUTTON_LEFT):
-            
+
             for i in reversed(range(len(self.cartas_mesa))):
                 carta = self.cartas_mesa[i]
-                if not carta.get("arrastavel",True):
+                if not carta.get("arrastavel", True):
                     continue
                 largura, altura = self._dimensoes(carta)
                 if (carta["x"] <= pyxel.mouse_x <= carta["x"] + largura and
                         carta["y"] <= pyxel.mouse_y <= carta["y"] + altura):
                     self.cartas_mesa.pop(i)
                     self.cartas_mesa.append(carta)
-                    self.indice_arrastando = len(self.cartas_mesa) - 1
+                    self.carta_arrastando = carta          # <-- referência, não índice
                     self.offset_x = pyxel.mouse_x - carta["x"]
                     self.offset_y = pyxel.mouse_y - carta["y"]
                     break
-        
+
         # Enquanto o botão continua pressionado, a carta segue o mouse
-        if self.indice_arrastando is not None and pyxel.btn(pyxel.MOUSE_BUTTON_LEFT):
-            self.desenhar_area=True
-
-            carta = self.cartas_mesa[self.indice_arrastando]
-            carta["x"] = pyxel.mouse_x - self.offset_x
-            carta["y"] = pyxel.mouse_y - self.offset_y
-        
-        # Soltou o botão -> a carta volta para a posição original
-        if self.indice_arrastando is not None and pyxel.btnr(pyxel.MOUSE_BUTTON_LEFT):
-            self.desenhar_area=False
-            carta = self.cartas_mesa[self.indice_arrastando]
-
-            if self._dentro_area(carta["x"],carta["y"]) and self.vez_jogador == 1:
-                carta_jogada = self.cartas_mesa.pop(self.indice_arrastando)
-                 # Remove a carta da lista de exibição para que ela não continue sendo desenhada na mão.
-                self.mao_j1 = [c for c in self.mao_j1 if c is not carta_jogada["sprite"]]
-                # Remove a carta original da mão do jogador, comparando pela identidade do objeto.
-                self._sincronizar_mao_j1()
-                self._jogar_cartas(carta_jogada["sprite"], jogador=1)
-                # Envia a carta original para _jogar_cartas(), que irá processar a jogada do jogador 1
-               
+        if self.carta_arrastando is not None and pyxel.btn(pyxel.MOUSE_BUTTON_LEFT):
+            # a carta pode ter sido removida de cartas_mesa por uma limpeza no meio do arraste
+            if self.carta_arrastando not in self.cartas_mesa:
+                self.carta_arrastando = None
             else:
+                self.desenhar_area = True
+                carta = self.carta_arrastando
+                carta["x"] = pyxel.mouse_x - self.offset_x
+                carta["y"] = pyxel.mouse_y - self.offset_y
+
+        # Soltou o botão -> a carta volta para a posição original
+        if self.carta_arrastando is not None and pyxel.btnr(pyxel.MOUSE_BUTTON_LEFT):
+            self.desenhar_area = False
+            carta = self.carta_arrastando
+
+            if carta in self.cartas_mesa and self._dentro_area(carta["x"], carta["y"]) and self.vez_jogador == 1:
+                self.cartas_mesa.remove(carta)
+                self.mao_j1 = [c for c in self.mao_j1 if c is not carta["sprite"]]
+                self._sincronizar_mao_j1()
+                self._jogar_cartas(carta["sprite"], jogador=1)
+            elif carta in self.cartas_mesa:
                 carta["x"] = carta["origem_x"]
                 carta["y"] = carta["origem_y"]
 
-            self.indice_arrastando = None
+            self.carta_arrastando = None
 
     def _dentro_area(self,x,y):
         return(self.area_jogada_x <= x <= self.area_jogada_x + self.area_jogada_largura and self.area_jogada_y <= y <= self.area_jogada_y + self.area_jogada_altura)
@@ -278,34 +293,31 @@ class Jogar:
             self.mao_j2.append(cartas_baralho.pop(0))
             self.mao_j2[_]["jogador"]="2"
 
-        print(self.mao_j1)
-        print(self.carta_bisca)
+        
 
         # Definindo quem fará a primeira jogada
         self.vez_jogador=random.randint(1,2)
 
         return cartas_baralho
        
-    def _jogar_cartas(self,carta_escolhida,jogador):
+    def _jogar_cartas(self, carta_escolhida, jogador):
         if self.carta_inicial is None and self.carta_secundaria is None:
             self.jogador_inicial = self.vez_jogador
             self.jogador_secundario = 2 if self.jogador_inicial == 1 else 1
-            """
-            corresponde a isso:
-            if self.jogador_inicial == 1:
-                self.jogador_secundario = 2
-            else:
-                self.jogador_secundario = 1
-            """
 
         if self.carta_inicial is None:
             self.carta_inicial = carta_escolhida
             self.vez_jogador = self.jogador_secundario
-            self._posicionar_carta_na_mesa(carta_escolhida,ordem="inicial")
+            self._posicionar_carta_na_mesa(carta_escolhida, ordem="inicial")
+
+            # se quem vai responder agora é o bot, arma o delay antes dele jogar
+            if self.jogador_secundario == 2 and self.mao_j2:
+                self.contador_jogada_bot = pyxel.frame_count + 30  # ~0.5s de "pensamento"
+                self.aguardar_bot = True
 
         elif self.carta_secundaria is None:
             self.carta_secundaria = carta_escolhida
-            self._posicionar_carta_na_mesa(carta_escolhida,ordem="secundaria")
+            self._posicionar_carta_na_mesa(carta_escolhida, ordem="secundaria")
             self._calc_mesa()
 
     def _calc_mesa(self):
@@ -332,8 +344,10 @@ class Jogar:
 
         # limpa a mesa (cartas jogadas somem) para a próxima jogada
         # Adiconar um "timer" aqui 
-        self.cartas_mesa = [c for c in self.cartas_mesa if c["sprite"] not in
-                            (self.carta_inicial, self.carta_secundaria)]
+        self.contador_frame=pyxel.frame_count+60
+        self.pode_limpar=True
+        
+       
 
 
         if len(self.monte) >= 2:
@@ -343,8 +357,7 @@ class Jogar:
             pass
             # acabou o monte, estatistica e quem são os vencedores
 
-        self.carta_inicial = None
-        self.carta_secundaria = None
+        
 
         return vencedor
 
@@ -367,10 +380,23 @@ class Jogar:
 
         self._arraste_carta()
 
-        # Logica para o bot esperar a vez dele
-        if self.vez_jogador == 2 and self.mao_j2:
+        # limpeza da mesa após a rodada + arma o delay do bot para abrir a próxima
+        if self.pode_limpar and pyxel.frame_count >= self.contador_frame:
+            self.cartas_mesa = [c for c in self.cartas_mesa if c["sprite"] not in (self.carta_inicial, self.carta_secundaria)]
+            self.pode_limpar = False
+            self.carta_inicial = None
+            self.carta_secundaria = None
+
+            if self.vez_jogador == 2 and self.mao_j2:
+                self.contador_jogada_bot = pyxel.frame_count + 30
+                self.aguardar_bot = True
+
+        # dispara a jogada do bot quando o delay (de qualquer origem) estourar
+        if self.aguardar_bot and pyxel.frame_count >= self.contador_jogada_bot:
+            self.aguardar_bot = False
             carta_bot = self._bot_carta()
-            self._jogar_cartas(carta_bot, jogador=2)        
+            self._jogar_cartas(carta_bot, jogador=2)
+
         return "Jogar"
 
     def _desenhar_jogadores(self):
@@ -479,7 +505,7 @@ class Jogar:
 
 class JogoBisca:
     def __init__(self):
-        pyxel.init(160, 120, title="Bisca")
+        pyxel.init(160, 120, title="Bisca", fps=60)
         pyxel.fullscreen(True) 
         pyxel.mouse(True) 
 

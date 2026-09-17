@@ -191,8 +191,8 @@ class Jogar:
         self.pontuacao_j2 = 0
 
         # Definições do personagem
-        self.jogador1 = Personagem("Personagem1",0,3,False)
-        self.jogador2 = Personagem("Bot",0,3,True)
+        self.jogador1 = Personagem("Personagem1",0,0,False)
+        self.jogador2 = Personagem("Bot",0,0,True)
         
     def _sincronizar_mao_j1(self):
             # Limpa a tela
@@ -352,8 +352,8 @@ class Jogar:
             self.jogador1.Adicionar_Pontos(pontuacao_mesa)
             print(f"jogador1 = {self.jogador1.pontuacao_mesa}")
         else:
-             self.jogador2.Adicionar_Pontos(pontuacao_mesa)
-             print(f"jogador 2 = {self.jogador2.pontuacao_mesa} ")
+            self.jogador2.Adicionar_Pontos(pontuacao_mesa)
+            print(f"jogador 2 = {self.jogador2.pontuacao_mesa} ")
 
         self.vez_jogador = vencedor
         outro_jogador = 2 if vencedor == 1 else 1 # Se o vencedor foi o Jogador 1, o outro é o 2
@@ -366,7 +366,7 @@ class Jogar:
             self._proximo_pescar(vencedor)
             self._proximo_pescar(outro_jogador)
         else:
-            # acabou o monte, estatistica e quem são os vencedores
+            # acabou o monte
             pass
 
         #Verifica se acabou e soma pontos do raio , 0 a 4
@@ -393,7 +393,7 @@ class Jogar:
             return
 
         # Definindo quem ganhou o raio e vendo se terminou o jogo
-        # Mudar esses prints para futuas telas
+        # Mudar esses prints para futuras telas
         if self.jogador1.pontuacao_mesa > self.jogador2.pontuacao_mesa:
             self.jogador1.pontuacao_raios += 1
             print(f"Jogador vencedor deste raio: {self.jogador1.nome}") 

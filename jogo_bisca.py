@@ -127,7 +127,7 @@ class Jogar:
 
         # Timer
         self.contador_frame=None
-        self.pode_limpar=None
+        self.pode_limpar=False
         self.aguardar_bot=False
         self.contador_jogada_bot=None
 
@@ -243,9 +243,8 @@ class Jogar:
 
     def _arraste_carta(self):
 
-        # de trás pra frente, para pegar a que está "por cima" primeiro
+        # 1. PEGAR A CARTA: Livre! O jogador pode clicar e arrastar a qualquer momento.
         if pyxel.btnp(pyxel.MOUSE_BUTTON_LEFT):
-
             for i in reversed(range(len(self.cartas_mesa))):
                 carta = self.cartas_mesa[i]
                 if not carta.get("arrastavel", True):
@@ -260,9 +259,8 @@ class Jogar:
                     self.offset_y = pyxel.mouse_y - carta["y"]
                     break
 
-        # Enquanto o botão continua pressionado, a carta segue o mouse
+        # 2. MOVER A CARTA: Enquanto o botão estiver pressionado, a carta segue o mouse.
         if self.carta_arrastando is not None and pyxel.btn(pyxel.MOUSE_BUTTON_LEFT):
-            # a carta pode ter sido removida de cartas_mesa por uma limpeza no meio do arraste
             if self.carta_arrastando not in self.cartas_mesa:
                 self.carta_arrastando = None
             else:
@@ -271,17 +269,24 @@ class Jogar:
                 carta["x"] = pyxel.mouse_x - self.offset_x
                 carta["y"] = pyxel.mouse_y - self.offset_y
 
-        # Soltou o botão -> a carta volta para a posição original
+        # 3. SOLTAR A CARTA: Aqui acontece a mágica e o bloqueio de segurança.
         if self.carta_arrastando is not None and pyxel.btnr(pyxel.MOUSE_BUTTON_LEFT):
             self.desenhar_area = False
             carta = self.carta_arrastando
 
-            if carta in self.cartas_mesa and self._dentro_area(carta["x"], carta["y"]) and self.vez_jogador == 1:
+            # Só aceita a jogada se estiver na área, SE for a vez do P1 e SE o jogo não estiver pausado
+            if (carta in self.cartas_mesa and 
+                self._dentro_area(carta["x"], carta["y"]) and 
+                self.vez_jogador == 1 and 
+                self._pode_jogador_jogar()):
+                
                 self.cartas_mesa.remove(carta)
                 self.mao_j1 = [c for c in self.mao_j1 if c is not carta["sprite"]]
                 self._sincronizar_mao_j1()
                 self._jogar_cartas(carta["sprite"], jogador=1)
+                
             elif carta in self.cartas_mesa:
+                # Se soltou fora da área, ou se não era a vez dele, a carta volta pra mão!
                 carta["x"] = carta["origem_x"]
                 carta["y"] = carta["origem_y"]
 
@@ -435,6 +440,11 @@ class Jogar:
         self._sincronizar_mao_j1()
         self._desenhar_monte()
         self._carta_bisca()
+
+    def _pode_jogador_jogar(self):
+        return (not self.aguardar_bot
+                and not self.pode_limpar
+                and self.carta_secundaria is None)    
 
 
 

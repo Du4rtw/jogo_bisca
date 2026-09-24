@@ -131,7 +131,11 @@ class Jogar:
         self.aguardar_bot=False
         self.contador_jogada_bot=None
 
+        # Definições do personagem
+        self.jogador1 = Personagem("Personagem1",0,0,False)
+        self.jogador2 = Personagem("Bot",0,0,True)
 
+        # Preparar as propriedades
         self.vez_jogador=0
         self.mao_j1=[]
         self.mao_j2=[]
@@ -142,7 +146,6 @@ class Jogar:
         if self.vez_jogador == 2 and self.mao_j2:
             self.contador_jogada_bot = pyxel.frame_count + 30
             self.aguardar_bot = True
-        
         
         # Posição dos slots das cartas da mão
         espaco_mao = 2
@@ -161,19 +164,7 @@ class Jogar:
         self.monte_x = 35
         self.monte_y = 46
 
-        # carta rotacionada 90° no sentido horário
-        altura_rotacionada = LARGURA_CARTA  # 18, após girar 90°
-        espaco_monte = 1
-        rot_x = self.monte_x + LARGURA_CARTA + espaco_monte
-        rot_y = self.monte_y + (ALTURA_CARTA - altura_rotacionada) // 2
-
-        self.cartas_mesa.append({
-            "sprite": self.carta_bisca,
-            "x": rot_x, "y": rot_y,
-            "origem_x": rot_x, "origem_y": rot_y,
-            "rotacionada": True,
-            "arrastavel":False,
-        })
+        self._carta_bisca()
 
         # Controle de arraste
         self.indice_arrastando = None
@@ -186,14 +177,25 @@ class Jogar:
         self.jogador_inicial = None
         self.jogador_secundario = None
 
-        # Pontuações
-        self.pontuacao_j1 = 0
-        self.pontuacao_j2 = 0
-
-        # Definições do personagem
-        self.jogador1 = Personagem("Personagem1",0,0,False)
-        self.jogador2 = Personagem("Bot",0,0,True)
-        
+    def _carta_bisca(self):
+        # Remove bisca antiga
+        self.cartas_mesa = [c for c in self.cartas_mesa if c.get("grupo") != "bisca"]
+ 
+        # carta rotacionada 90° no sentido horário
+        altura_rotacionada = LARGURA_CARTA  # 18, após girar 90°
+        espaco_monte = 1
+        rot_x = self.monte_x + LARGURA_CARTA + espaco_monte
+        rot_y = self.monte_y + (ALTURA_CARTA - altura_rotacionada) // 2
+ 
+        self.cartas_mesa.append({
+            "sprite": self.carta_bisca,
+            "x": rot_x, "y": rot_y,
+            "origem_x": rot_x, "origem_y": rot_y,
+            "rotacionada": True,
+            "arrastavel": False,
+            "grupo": "bisca",
+        })
+    
     def _sincronizar_mao_j1(self):
             # Limpa a tela
             self.cartas_mesa = [c for c in self.cartas_mesa if c.get("grupo") != "mao_j1"]
@@ -413,7 +415,21 @@ class Jogar:
             print("Raio empatado, não será somado pontuação") 
             print("Novo Jogo e estatisticas")
 
+        # Zerar variaveis de pontuação de mesa
+        self.jogador1.pontuacao_mesa = 0
+        self.jogador2.pontuacao_mesa = 0
+        self.vez_jogador=0
+        self.mao_j1=[]
+        self.mao_j2=[]
+        self.carta_bisca=[]
+        self.cartas_mesa = []
 
+        # Remove uma entrada de bisca antiga, se existir (importante ao reiniciar a rodada)
+        self.cartas_mesa = [c for c in self.cartas_mesa if c.get("grupo") != "bisca"]
+        
+        self.monte = self._inicio_jogo() 
+        self._sincronizar_mao_j1()
+        self._carta_bisca()
 
     def update(self):
 

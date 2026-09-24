@@ -292,8 +292,13 @@ class Jogar:
 
             self.carta_arrastando = None
 
-    def _dentro_area(self,x,y):
-        return(self.area_jogada_x <= x <= self.area_jogada_x + self.area_jogada_largura and self.area_jogada_y <= y <= self.area_jogada_y + self.area_jogada_altura)
+    def _dentro_area(self, x, y):
+
+        centro_x = x + (LARGURA_CARTA // 2)
+        centro_y = y + (ALTURA_CARTA // 2)
+
+        return (self.area_jogada_x <= centro_x <= self.area_jogada_x + self.area_jogada_largura and 
+                self.area_jogada_y <= centro_y <= self.area_jogada_y + self.area_jogada_altura)
 
     def _bot_carta(self):
         if not self.mao_j2:
@@ -366,28 +371,56 @@ class Jogar:
             print(f"jogador 2 = {self.jogador2.pontuacao_mesa} ")
 
         self.vez_jogador = vencedor
-        outro_jogador = 2 if vencedor == 1 else 1 # Se o vencedor foi o Jogador 1, o outro é o 2
 
-        # timer
+        # Arma o timer de 60 frames para limpar a mesa visualmente
         self.contador_frame=pyxel.frame_count+60
         self.pode_limpar=True      
 
-        if len(self.monte) > 2:
-            self._proximo_pescar(vencedor)
-            self._proximo_pescar(outro_jogador)
-        elif len(self.monte) ==  2:
-            self._proximo_pescar(vencedor)
-            self._proximo_pescar(outro_jogador)
-            self._desenhar_monte()
-            self._carta_bisca()
-        else:
-            pass
-
-        #Verifica se acabou e soma pontos do raio , 0 a 4
-        self._pontuacao_raio()
+        # RETIRAMOS AS FUNÇÕES DE PESCAR E SOMAR RAIO DAQUI!
+        # Elas vão acontecer só quando a mesa for limpa no update.
 
         return vencedor
 
+
+    def update(self):
+        self._arraste_carta()
+
+        # limpeza da mesa após a rodada + arma o delay do bot para abrir a próxima
+        if self.pode_limpar and pyxel.frame_count >= self.contador_frame:
+            # 1. Limpa as cartas do centro da mesa
+            self.cartas_mesa = [c for c in self.cartas_mesa if c["sprite"] not in (self.carta_inicial, self.carta_secundaria)]
+            self.pode_limpar = False
+            self.carta_inicial = None
+            self.carta_secundaria = None
+
+            # 2. AGORA SIM, visualmente, os jogadores pescam as novas cartas!
+            vencedor = self.vez_jogador
+            outro_jogador = 2 if vencedor == 1 else 1
+
+            if len(self.monte) > 0:
+                self._proximo_pescar(vencedor)
+                self._proximo_pescar(outro_jogador)
+                
+                # Se as duas cartas que acabaram de ser pescadas eram as últimas (zerou):
+                if len(self.monte) == 0:
+                    self._carta_bisca() # Isso vai remover a bisca da mesa
+            
+            # 3. Verifica se o raio/jogo acabou
+            self._pontuacao_raio()
+
+            # 4. Se o jogo continuar e for a vez do bot, arma o delay dele jogar
+            if self.vez_jogador == 2 and self.mao_j2:
+                self.contador_jogada_bot = pyxel.frame_count + 30
+                self.aguardar_bot = True
+
+        # dispara a jogada do bot quando o delay (de qualquer origem) estourar
+        if self.aguardar_bot and pyxel.frame_count >= self.contador_jogada_bot:
+            self.aguardar_bot = False
+            carta_bot = self._bot_carta()
+            self._jogar_cartas(carta_bot, jogador=2)
+
+        return "Jogar"
+    
     def _proximo_pescar(self,jogador):
    
         carta_pescada = self.monte.pop(0)
@@ -402,7 +435,7 @@ class Jogar:
         return
 
     def _pontuacao_raio(self):
-        # Garantindo que acabou as cartas do monte e da mão dos dois jogadores
+       
         if self.monte or self.mao_j1 or self.mao_j2:
             return
 
@@ -438,7 +471,7 @@ class Jogar:
         
         self.monte = self._inicio_jogo() 
         self._sincronizar_mao_j1()
-        self._desenhar_monte()
+        
         self._carta_bisca()
 
     def _pode_jogador_jogar(self):
@@ -449,21 +482,36 @@ class Jogar:
 
 
     def update(self):
-
         self._arraste_carta()
 
-        # limpeza da mesa após a rodada + arma o delay do bot para abrir a próxima
+        
         if self.pode_limpar and pyxel.frame_count >= self.contador_frame:
+           
             self.cartas_mesa = [c for c in self.cartas_mesa if c["sprite"] not in (self.carta_inicial, self.carta_secundaria)]
             self.pode_limpar = False
             self.carta_inicial = None
             self.carta_secundaria = None
 
+            
+            vencedor = self.vez_jogador
+            outro_jogador = 2 if vencedor == 1 else 1
+
+            if len(self.monte) > 0:
+                self._proximo_pescar(vencedor)
+                self._proximo_pescar(outro_jogador)
+                
+             
+                if len(self.monte) == 0:
+                    self._carta_bisca() 
+            
+            self._pontuacao_raio()
+
+            
             if self.vez_jogador == 2 and self.mao_j2:
                 self.contador_jogada_bot = pyxel.frame_count + 30
                 self.aguardar_bot = True
 
-        # dispara a jogada do bot quando o delay (de qualquer origem) estourar
+      
         if self.aguardar_bot and pyxel.frame_count >= self.contador_jogada_bot:
             self.aguardar_bot = False
             carta_bot = self._bot_carta()
@@ -549,7 +597,54 @@ class Jogar:
             pyxel.pset(x + largura - 1, y + i, cor)
 
 
+    def _desenhar_tally(self, x, y, quantidade, cor):
+       
+        espaco = 3          
+        altura_traco = 5
 
+        verticais = min(quantidade, 3)
+        for i in range(verticais):
+            tx = x + i * espaco
+            pyxel.line(tx, y, tx, y + altura_traco, cor)
+
+   
+        if quantidade >= 4:
+            meio_y = y + (altura_traco // 2)
+        
+            pyxel.line(x - 1, meio_y, x + (2 * espaco) + 1, meio_y, cor)
+
+    def _desenhar_caderno(self):
+        cad_x, cad_y = 120, 90
+        cad_largura, cad_altura = 36, 26
+
+        pyxel.rect(cad_x + 1, cad_y + 1, cad_largura, cad_altura, 1)
+
+        pyxel.rect(cad_x, cad_y, cad_largura, cad_altura, 7)
+        pyxel.rectb(cad_x, cad_y, cad_largura, cad_altura, 13)
+
+      
+        espaco_espiral = 4
+        quantidade_argolas = cad_altura // espaco_espiral
+        for i in range(quantidade_argolas):
+            ax = cad_x                             
+            ay = cad_y + 3 + i * espaco_espiral    
+            pyxel.circb(ax, ay, 1, 5)              
+            pyxel.pset(ax, ay, 6)                  
+
+        pyxel.line(cad_x + 5, cad_y + 8, cad_x + cad_largura - 2, cad_y + 8, 6)
+
+    
+        raio_atual = self.jogador1.pontuacao_raios + self.jogador2.pontuacao_raios + 1
+        pyxel.text(cad_x + 5, cad_y + 3, f"Raio {raio_atual}", 0)
+
+       
+        pyxel.text(cad_x + 5, cad_y + 11, "P1", 12)
+        pyxel.text(cad_x + 5, cad_y + 19, "BOT", 8)
+
+        self._desenhar_tally(cad_x + 23, cad_y + 11, self.jogador1.pontuacao_raios, 12)
+        self._desenhar_tally(cad_x + 23, cad_y + 19, self.jogador2.pontuacao_raios, 8)
+        
+    
     def draw(self):
         pyxel.cls(3)
 
@@ -561,6 +656,7 @@ class Jogar:
 
         # Monte (carta virada para baixo, fixa na mesa)
         self._desenhar_monte()
+        self._desenhar_caderno()
 
         # As 5 cartas (3 da mão + a carta rotacionada), usando o recorte
         for carta in self.cartas_mesa:

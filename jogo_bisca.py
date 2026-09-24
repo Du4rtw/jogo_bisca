@@ -135,7 +135,7 @@ class Jogar:
         self.jogador1 = Personagem("Personagem1",0,0,False)
         self.jogador2 = Personagem("Bot",0,0,True)
 
-        # Preparar as propriedades
+        # Preparar as propriedades'
         self.vez_jogador=0
         self.mao_j1=[]
         self.mao_j2=[]
@@ -180,21 +180,24 @@ class Jogar:
     def _carta_bisca(self):
         # Remove bisca antiga
         self.cartas_mesa = [c for c in self.cartas_mesa if c.get("grupo") != "bisca"]
- 
-        # carta rotacionada 90° no sentido horário
-        altura_rotacionada = LARGURA_CARTA  # 18, após girar 90°
-        espaco_monte = 1
-        rot_x = self.monte_x + LARGURA_CARTA + espaco_monte
-        rot_y = self.monte_y + (ALTURA_CARTA - altura_rotacionada) // 2
- 
-        self.cartas_mesa.append({
-            "sprite": self.carta_bisca,
-            "x": rot_x, "y": rot_y,
-            "origem_x": rot_x, "origem_y": rot_y,
-            "rotacionada": True,
-            "arrastavel": False,
-            "grupo": "bisca",
-        })
+
+        if len(self.monte) >= 2:
+            # carta rotacionada 90° no sentido horário
+            altura_rotacionada = LARGURA_CARTA  # 18, após girar 90°
+            espaco_monte = 1
+            rot_x = self.monte_x + LARGURA_CARTA + espaco_monte
+            rot_y = self.monte_y + (ALTURA_CARTA - altura_rotacionada) // 2
+    
+            self.cartas_mesa.append({
+                "sprite": self.carta_bisca,
+                "x": rot_x, "y": rot_y,
+                "origem_x": rot_x, "origem_y": rot_y,
+                "rotacionada": True,
+                "arrastavel": False,
+                "grupo": "bisca",
+            })
+        else:
+            pass
     
     def _sincronizar_mao_j1(self):
             # Limpa a tela
@@ -364,11 +367,15 @@ class Jogar:
         self.contador_frame=pyxel.frame_count+60
         self.pode_limpar=True      
 
-        if len(self.monte) >= 2:
+        if len(self.monte) > 2:
             self._proximo_pescar(vencedor)
             self._proximo_pescar(outro_jogador)
+        elif len(self.monte) ==  2:
+            self._proximo_pescar(vencedor)
+            self._proximo_pescar(outro_jogador)
+            self._desenhar_monte()
+            self._carta_bisca()
         else:
-            # acabou o monte
             pass
 
         #Verifica se acabou e soma pontos do raio , 0 a 4
@@ -423,13 +430,13 @@ class Jogar:
         self.mao_j2=[]
         self.carta_bisca=[]
         self.cartas_mesa = []
-
-        # Remove uma entrada de bisca antiga, se existir (importante ao reiniciar a rodada)
-        self.cartas_mesa = [c for c in self.cartas_mesa if c.get("grupo") != "bisca"]
         
         self.monte = self._inicio_jogo() 
         self._sincronizar_mao_j1()
+        self._desenhar_monte()
         self._carta_bisca()
+
+
 
     def update(self):
 
@@ -477,26 +484,28 @@ class Jogar:
         # Representa o monte (baralho) virado para baixo. Como o Cards.png
         x, y = self.monte_x, self.monte_y
 
-        pyxel.rect(x, y, LARGURA_CARTA, ALTURA_CARTA, 7)                      
-        pyxel.rect(x + 1, y + 1, LARGURA_CARTA - 2, ALTURA_CARTA - 2, 8)       
-        pyxel.rect(x + 3, y + 3, LARGURA_CARTA - 6, ALTURA_CARTA - 6, 7)       
+        if len(self.monte) >= 2:
+            pyxel.rect(x, y, LARGURA_CARTA, ALTURA_CARTA, 7)                      
+            pyxel.rect(x + 1, y + 1, LARGURA_CARTA - 2, ALTURA_CARTA - 2, 8)       
+            pyxel.rect(x + 3, y + 3, LARGURA_CARTA - 6, ALTURA_CARTA - 6, 7)       
 
-        # Campo central com o padrão em xadrez
-        campo_x, campo_y = x + 4, y + 4
-        campo_largura, campo_altura = LARGURA_CARTA - 8, ALTURA_CARTA - 8
-        tamanho_quadrado = 2
-        for linha in range(campo_altura // tamanho_quadrado):
-            for coluna in range(campo_largura // tamanho_quadrado):
-                if (linha + coluna) % 2 == 0:
-                    pyxel.rect(
-                        campo_x + coluna * tamanho_quadrado,
-                        campo_y + linha * tamanho_quadrado,
-                        tamanho_quadrado, tamanho_quadrado,
-                        8,
-                    )
+            # Campo central com o padrão em xadrez
+            campo_x, campo_y = x + 4, y + 4
+            campo_largura, campo_altura = LARGURA_CARTA - 8, ALTURA_CARTA - 8
+            tamanho_quadrado = 2
+            for linha in range(campo_altura // tamanho_quadrado):
+                for coluna in range(campo_largura // tamanho_quadrado):
+                    if (linha + coluna) % 2 == 0:
+                        pyxel.rect(
+                            campo_x + coluna * tamanho_quadrado,
+                            campo_y + linha * tamanho_quadrado,
+                            tamanho_quadrado, tamanho_quadrado,
+                            8,
+                        )
+        else:
+            pass
 
     def _desenhar_carta_rotacionada(self, dest_x, dest_y, u, v):
-
         for x in range(LARGURA_CARTA):
             for y in range(ALTURA_CARTA):
                 cor = pyxel.images[0].pget(u + x, v + y)

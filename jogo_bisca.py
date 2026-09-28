@@ -295,11 +295,152 @@ class Jogar:
     def _dentro_area(self,x,y):
         return(self.area_jogada_x <= x <= self.area_jogada_x + self.area_jogada_largura and self.area_jogada_y <= y <= self.area_jogada_y + self.area_jogada_altura)
 
+    def _carta_mais_forte(self,cartas_normais,carta_oponente):
+        cartas_que_ganham = []
+        for carta in cartas_normais:
+            if carta["naipe"] == carta_oponente["naipe"] and carta["forca"] > carta_oponente["forca"]:
+                cartas_que_ganham.append(carta)
+
+        if cartas_que_ganham:
+            # joga a que ganha com maior força/valor
+            carta_escolhida = cartas_que_ganham[0]
+            for carta in cartas_que_ganham:
+                if carta["valor"] > carta_escolhida["valor"]:
+                    carta_escolhida = carta
+            self.mao_j2.remove(carta_escolhida)
+            return carta_escolhida
+        else:
+            pass
+
+        
+    def _carta_de_menor_valor(self, lista_cartas):
+        # Percorrer uma lista
+        carta_escolhida = lista_cartas[0]
+
+        for carta in lista_cartas:
+            if carta["valor"] < carta_escolhida["valor"]:
+                carta_escolhida = carta
+            elif carta["valor"] == carta_escolhida["valor"]:
+                if carta["forca"] < carta_escolhida["forca"]:
+                    carta_escolhida = carta
+                # Aqui passa direto a primeira comparação com o primeiro elemento
+        return carta_escolhida
+
     def _bot_carta(self):
+
+        '''
+        # Visualizar cartas do bot
+        print() 
+        print("Cartas do bot")
+        for carta in self.mao_j2:
+            print(carta["numCarta"],carta["naipe"])
+        print()
+        '''
+
         if not self.mao_j2:
             return None
-        indice = random.randint(0, len(self.mao_j2) - 1)
-        return self.mao_j2.pop(indice)
+
+        # Criar duas listas (bisca e normal)    
+        naipe_bisca = self.carta_bisca["naipe"]
+        cartas_bisca = []
+        cartas_normais = []
+        for carta in self.mao_j2:
+            if carta["naipe"] == naipe_bisca:
+                cartas_bisca.append(carta)
+            else:
+                cartas_normais.append(carta)
+
+        # Cartas normais criam cartas seguras/fracas
+        cartas_seguras = []
+        for carta in cartas_normais:
+            if carta["forca"] < 9:
+                cartas_seguras.append(carta)
+
+        # Bot joga primeiro
+        if self.carta_inicial is None:
+
+            # Se existir cartas seguras
+            if cartas_seguras:
+                carta_escolhida = self._carta_de_menor_valor(cartas_seguras)
+                self.mao_j2.remove(carta_escolhida)
+                return carta_escolhida
+
+            # Se só tiver cartas altas e biscas
+            if cartas_bisca:
+                carta_escolhida = self._carta_de_menor_valor(cartas_bisca)
+                self.mao_j2.remove(carta_escolhida)
+                return carta_escolhida
+
+            # Sobrou só cartas altas 
+            carta_escolhida = self._carta_de_menor_valor(self.mao_j2)
+            self.mao_j2.remove(carta_escolhida)
+            return carta_escolhida
+        
+        else: # Bot joga segundo
+            carta_oponente = self.carta_inicial
+
+            # O j1 jogou bisca
+            if carta_oponente["naipe"] == naipe_bisca:
+                # Se existir cartas seguras
+                if cartas_seguras:
+                    carta_escolhida = self._carta_de_menor_valor(cartas_seguras)
+                    self.mao_j2.remove(carta_escolhida)
+                    return carta_escolhida
+
+                # Depois, gasta bisca em vez de carta alta
+                if cartas_bisca:
+                    carta_escolhida = self._carta_de_menor_valor(cartas_bisca)
+                    self.mao_j2.remove(carta_escolhida)
+                    return carta_escolhida
+
+                # Só sobrou carta alta
+                carta_escolhida = self._carta_de_menor_valor(cartas_normais)
+                self.mao_j2.remove(carta_escolhida)
+                return carta_escolhida
+
+            # O j1 jogou 0 pontos sem ser bisca
+            if carta_oponente["valor"] == 0:
+                
+                # Vê se tem do mesmo naipe e maior
+                resultado = self._carta_mais_forte(cartas_normais, carta_oponente)
+                if resultado:
+                    return resultado
+                
+                # Não tem do mesmo naipe, descarta a de menor valor sem ser bisca
+                if cartas_normais:
+                    carta_escolhida = self._carta_de_menor_valor(cartas_normais)
+                    self.mao_j2.remove(carta_escolhida)
+                    return carta_escolhida
+
+                # Só tem bisca na mão, menor valor
+                carta_escolhida = self._carta_de_menor_valor(self.mao_j2)
+                self.mao_j2.remove(carta_escolhida)
+                return carta_escolhida
+
+            # O j1 jogou pontos sem ser bisca
+            # Vê se tem do mesmo naipe e maior
+            resultado = self._carta_mais_forte(cartas_normais, carta_oponente)
+            if resultado:
+                return resultado
+
+            # Não tem carta do mesmo naipe que ganhe
+            if carta_oponente["valor"] >= 10:
+                # Jogar bisca menor
+                if cartas_bisca:
+                    carta_escolhida = self._carta_de_menor_valor(cartas_bisca)
+                    self.mao_j2.remove(carta_escolhida)
+                    return carta_escolhida
+
+            # Não compensa gastar bisca/não tem
+            if cartas_normais:
+                carta_escolhida = self._carta_de_menor_valor(cartas_normais)
+                self.mao_j2.remove(carta_escolhida)
+                return carta_escolhida
+
+            # Só tem bisca na mão
+            carta_escolhida = self._carta_de_menor_valor(self.mao_j2)
+            self.mao_j2.remove(carta_escolhida)
+            return carta_escolhida
     
     def _inicio_jogo(self):
 
@@ -360,10 +501,10 @@ class Jogar:
         pontuacao_mesa = int(self.carta_inicial["valor"]) + int(self.carta_secundaria["valor"])
         if vencedor == 1:
             self.jogador1.Adicionar_Pontos(pontuacao_mesa)
-            print(f"jogador1 = {self.jogador1.pontuacao_mesa}")
+            #print(f"jogador1 = {self.jogador1.pontuacao_mesa}")
         else:
             self.jogador2.Adicionar_Pontos(pontuacao_mesa)
-            print(f"jogador 2 = {self.jogador2.pontuacao_mesa} ")
+            #print(f"jogador 2 = {self.jogador2.pontuacao_mesa} ")
 
         self.vez_jogador = vencedor
         outro_jogador = 2 if vencedor == 1 else 1 # Se o vencedor foi o Jogador 1, o outro é o 2

@@ -54,7 +54,6 @@ class MenuInicial:
         self._renderizar_letreiro_bisca(x, y, 7) 
 
     def _renderizar_letreiro_bisca(self, x, y, cor):
-        # B
         pyxel.rect(x, y, 2, 7, cor)
         pyxel.rect(x, y, 4, 1, cor)
         pyxel.rect(x, y + 3, 4, 1, cor)
@@ -147,36 +146,34 @@ class TelaFinalJogo:
             pyxel.line(x+6, y+3, x+6, y+5, cor_seta) 
 
     def draw(self):
-        # Desenha mesa no fundo
+       
         pyxel.cls(3)
         self.partida._desenhar_jogadores()
         self.partida._desenhar_mesa()
-        
-        # 2. Descobre quem ganhou
         venceu_p1 = self.partida.jogador1.pontuacao_raios >= 4
         if self.partida.jogador1.pontuacao_raios==4 or self.partida.jogador2.pontuacao_raios==4:
             texto_vitoria = "PLAYER 1 VENCEU!" if venceu_p1 else "BOT VENCEU!"
             cor_vitoria=7
             larg_vitoria = len(texto_vitoria) * 4
             pyxel.text(80 - (larg_vitoria // 2), 10, texto_vitoria, cor_vitoria)
-        else:
-            texto_vitoria = "PLAYER 1 VENCEU O RAIO!" if self.partida.jogador1.pontuacao_raios>self.partida.jogador2.pontuacao_raios else "BOT VENCEU O RAIO!"
-            cor_vitoria=7
-            larg_vitoria = len(texto_vitoria) * 4
-            pyxel.text(80 - (larg_vitoria // 2), 10, texto_vitoria, cor_vitoria)
+        
+        texto_vitoria = "PLAYER 1 VENCEU O RAIO!" if self.partida.jogador1.pontuacao_raios>self.partida.jogador2.pontuacao_raios else "BOT VENCEU O RAIO!"
+        cor_vitoria=7
+        larg_vitoria = len(texto_vitoria) * 4
+        pyxel.text(80 - (larg_vitoria // 2), 10, texto_vitoria, cor_vitoria)
 
 
     
         cad_x, cad_y = 20, 20
         cad_largura, cad_altura = 120, 75
 
-        # Sombra e Folhas
+        
         pyxel.rect(cad_x + 2, cad_y + 2, cad_largura, cad_altura, 1)
         pyxel.rect(cad_x, cad_y, cad_largura, cad_altura, 7)
         pyxel.rectb(cad_x, cad_y, cad_largura, cad_altura, 13)
         pyxel.line(cad_x + 60, cad_y, cad_x + 60, cad_y + cad_altura, 13) 
 
-        # Mola central do caderno
+        
         espaco_espiral = 6
         quantidade_argolas = cad_altura // espaco_espiral
         for i in range(quantidade_argolas):
@@ -362,7 +359,7 @@ class Jogar:
 
     def _arraste_carta(self):
 
-        # 1. PEGAR A CARTA: Livre! O jogador pode clicar e arrastar a qualquer momento.
+        
         if pyxel.btnp(pyxel.MOUSE_BUTTON_LEFT):
             for i in reversed(range(len(self.cartas_mesa))):
                 carta = self.cartas_mesa[i]
@@ -378,7 +375,7 @@ class Jogar:
                     self.offset_y = pyxel.mouse_y - carta["y"]
                     break
 
-        # 2. MOVER A CARTA: Enquanto o botão estiver pressionado, a carta segue o mouse.
+        
         if self.carta_arrastando is not None and pyxel.btn(pyxel.MOUSE_BUTTON_LEFT):
             if self.carta_arrastando not in self.cartas_mesa:
                 self.carta_arrastando = None
@@ -388,14 +385,15 @@ class Jogar:
                 carta["x"] = pyxel.mouse_x - self.offset_x
                 carta["y"] = pyxel.mouse_y - self.offset_y
 
-        # 3. SOLTAR A CARTA: Aqui acontece a mágica e o bloqueio de segurança.
+        
         if self.carta_arrastando is not None and pyxel.btnr(pyxel.MOUSE_BUTTON_LEFT):
             self.desenhar_area = False
             carta = self.carta_arrastando
 
-            # Só aceita a jogada se estiver na área, SE for a vez do P1 e SE o jogo não estiver pausado
+            
             if (carta in self.cartas_mesa and 
                 self._dentro_area(carta["x"], carta["y"]) and 
+                # Correção do erro
                 self.vez_jogador == 1 and 
                 self._pode_jogador_jogar()):
                 
@@ -405,7 +403,7 @@ class Jogar:
                 self._jogar_cartas(carta["sprite"], jogador=1)
                 
             elif carta in self.cartas_mesa:
-                # Se soltou fora da área, ou se não era a vez dele, a carta volta pra mão!
+                
                 carta["x"] = carta["origem_x"]
                 carta["y"] = carta["origem_y"]
 
@@ -707,7 +705,7 @@ class Jogar:
 
 
     def update(self):
-        # Atalho de desenvolvedor para testar a tela final
+        # Atalho para testar a tela final
         if pyxel.btnp(pyxel.KEY_F):
             self.jogador1.pontuacao_raios = 4
             self.jogador2.pontuacao_raios = 2

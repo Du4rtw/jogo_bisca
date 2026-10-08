@@ -181,25 +181,21 @@ class TelaFinalJogo:
         pyxel.cls(3)
         self.partida._desenhar_jogadores()
         self.partida._desenhar_mesa()
-        partida_acabou = (self.partida.jogador1.pontuacao_raios >= 4 or
-                  self.partida.jogador2.pontuacao_raios >= 4)
+        p1 = self.partida.jogador1
+        bot = self.partida.jogador2
+        partida_acabou = p1.pontuacao_raios >= 4 or bot.pontuacao_raios >= 4
 
         if partida_acabou:
-            texto_vitoria = "PLAYER 1 VENCEU!" if self.partida.jogador1.pontuacao_raios >= 4 else "BOT VENCEU!"
-        elif self.partida.vencedor_raio == 1:
+            texto_vitoria = "PLAYER 1 VENCEU!" if p1.pontuacao_raios >= 4 else "BOT VENCEU!"
+        elif p1.pontuacao_mesa > bot.pontuacao_mesa:
             texto_vitoria = "PLAYER 1 VENCEU O RAIO!"
-        elif self.partida.vencedor_raio == 2:
+        elif bot.pontuacao_mesa > p1.pontuacao_mesa:
             texto_vitoria = "BOT VENCEU O RAIO!"
         else:
             texto_vitoria = "RAIO EMPATADO!"
 
-        pyxel.text(80 - (len(texto_vitoria) * 4 // 2), 10, texto_vitoria, 7)
-        
-        texto_vitoria = "PLAYER 1 VENCEU O RAIO!" if self.partida.jogador1.pontuacao_raios>self.partida.jogador2.pontuacao_raios else "BOT VENCEU O RAIO!"
-        cor_vitoria=7
         larg_vitoria = len(texto_vitoria) * 4
-        pyxel.text(80 - (larg_vitoria // 2), 10, texto_vitoria, cor_vitoria)
-
+        pyxel.text(80 - (larg_vitoria // 2), 10, texto_vitoria, 7)
         cad_x, cad_y = 20, 20
         cad_largura, cad_altura = 120, 75
         
@@ -235,8 +231,8 @@ class TelaFinalJogo:
         pyxel.text(centro_dir - (len(lbl_raios)*4//2), cad_y + 44, lbl_raios, 8)
         self._desenhar_tally(centro_dir - 4, cad_y + 52, self.partida.jogador2.pontuacao_raios, 8)
 
-        if self.partida.jogador1.pontuacao_raios==4 or self.partida.jogador2.pontuacao_raios==4:
-            self._desenhar_seta(cad_x + cad_largura-2, cad_y + cad_altura - 12, "dir", "Estatisticas")     
+        if partida_acabou:
+            self._desenhar_seta(cad_x + cad_largura-2, cad_y + cad_altura - 12, "dir", "Estatisticas")
         else:
             self._desenhar_seta(cad_x + cad_largura-2, cad_y + cad_altura - 12, "dir", "Continuar")
 
@@ -608,6 +604,8 @@ class Jogar:
   
         # Definindo quem fará a primeira jogada
         self.vez_jogador=random.randint(1,2)
+        
+        self.total_monte = len(cartas_baralho)
 
         return cartas_baralho
        
@@ -824,6 +822,14 @@ class Jogar:
         else:
             pass
 
+    def _desenhar_contador_monte(self):
+        texto = f"{len(self.monte)}/{self.total_monte}"
+        x = self.monte_x + 1
+        y = self.monte_y + ALTURA_CARTA + 2      
+        pyxel.text(x + 1, y + 1, texto, 0)       
+        pyxel.text(x, y, texto, 7)
+
+
     def _desenhar_carta_rotacionada(self, dest_x, dest_y, u, v):
         for x in range(LARGURA_CARTA):
             for y in range(ALTURA_CARTA):
@@ -904,6 +910,8 @@ class Jogar:
 
         self._desenhar_tally(cad_x + 23, cad_y + 11, self.jogador1.pontuacao_raios, 12)
         self._desenhar_tally(cad_x + 23, cad_y + 19, self.jogador2.pontuacao_raios, 8)
+
+        
         
     
     def draw(self):
@@ -917,6 +925,7 @@ class Jogar:
 
         # Monte (carta virada para baixo, fixa na mesa)
         self._desenhar_monte()
+        self._desenhar_contador_monte()
         self._desenhar_caderno()
 
         # As 5 cartas (3 da mão + a carta rotacionada), usando o recorte

@@ -1,15 +1,6 @@
-"""
-tela_estatisticas.py
---------------------
-Cenario "Estatisticas": caderneta fixa com dois blocos invisiveis.
-  Esquerda: Partidas e Raios        Direita: Eficiencia de Trunfos, Sortometro, Dominio da Mesa
-
-Atencao: a fonte padrao do Pyxel nao tem acentos, por isso os textos sao sem acento.
-"""
 import pyxel
 import estatisticas
 
-# Cores (paleta padrao do Pyxel)
 COR_FUNDO = 3
 COR_PAPEL = 7
 COR_SOMBRA = 5
@@ -23,7 +14,7 @@ COR_ARGOLA_BRILHO = 7
 COR_P1 = 12
 COR_BOT = 8
 
-# Geometria da caderneta
+# caderneta
 CAD_X, CAD_Y, CAD_W, CAD_H = 8, 14, 144, 94
 ESQ_X0, ESQ_X1 = 15, 76     # bloco esquerdo (invisivel)
 DIR_X0, DIR_X1 = 84, 145    # bloco direito (invisivel)
@@ -31,7 +22,7 @@ Y_INICIO = 30
 PASSO = 6                   # altura de cada linha de texto
 GAP = 5                     # espaco entre secoes
 
-# Botao/dica de voltar (area clicavel)
+# Botao de voltar
 VOLTAR_X, VOLTAR_Y, VOLTAR_W, VOLTAR_H = 8, 113, 44, 7
 
 
@@ -41,34 +32,32 @@ class TelaEstatisticas:
         self.resumo = estatisticas.resumo(estatisticas.DADOS_PADRAO)
 
     def abrir(self, voltar_para, sessao=None):
-        """Chamada pelo JogoBisca na hora de entrar na tela: guarda de onde veio,
-        le o JSON UMA vez (nao a cada frame) e pega a sorte AO VIVO da sessao."""
+        # guarda de onde veio, le o JSON UMA vez
         self.voltar_para = voltar_para
         sorte = sessao.sorte_partida() if sessao else (50.0, 50.0)
         self.resumo = estatisticas.resumo(estatisticas.carregar_estatisticas(), sorte)
 
-    # ------------------------------------------------------------------ update
     def _clicou_voltar(self):
         return (pyxel.btnp(pyxel.MOUSE_BUTTON_LEFT)
                 and VOLTAR_X <= pyxel.mouse_x <= VOLTAR_X + VOLTAR_W
                 and VOLTAR_Y <= pyxel.mouse_y <= VOLTAR_Y + VOLTAR_H)
+
+
 
     def update(self):
         if pyxel.btnp(pyxel.KEY_E) or self._clicou_voltar():
             return self.voltar_para
         return "Estatisticas"
 
-    # -------------------------------------------------------------- utilidades
     def _cabecalho(self, x0, x1, y, texto):
         pyxel.text(x0, y, texto, COR_CABECALHO)
         pyxel.line(x0, y + 6, x1, y + 6, COR_LINHA)
 
     def _linha(self, x0, x1, y, rotulo, valor, cor_valor=COR_VALOR):
-        """Rotulo alinhado a esquerda, valor alinhado a direita do bloco."""
+        # Rotulo alinhado a esquerda, valor alinhado a direita do bloco
         pyxel.text(x0, y, rotulo, COR_LABEL)
         pyxel.text(x1 - len(valor) * 4, y, valor, cor_valor)
 
-    # ------------------------------------------------------------------ blocos
     def _bloco_esquerdo(self):
         r = self.resumo
         x0, x1 = ESQ_X0, ESQ_X1
@@ -94,11 +83,11 @@ class TelaEstatisticas:
         x0, x1 = DIR_X0, DIR_X1
         y = Y_INICIO
 
-        self._cabecalho(x0, x1, y, "EFIC. TRUNFOS")
+        self._cabecalho(x0, x1, y, "EFIC. BISCAS")
         y += PASSO + 2
-        self._linha(x0, x1, y, "Razao", f"{r['eficiencia_trunfos']:.2f}")
+        self._linha(x0, x1, y, "Razao", f"{r['eficiencia_biscas']:.2f}")
         y += PASSO
-        self._linha(x0, x1, y, "Jogados", str(r["trunfos_jogados"]))
+        self._linha(x0, x1, y, "Jogados", str(r["biscas_jogados"]))
 
         y += PASSO + GAP
         self._cabecalho(x0, x1, y, "SORTOMETRO")

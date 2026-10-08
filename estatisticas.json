@@ -1,13 +1,13 @@
 {
-    "partidas_ganhas": 0,
-    "partidas_totais": 0,
+    "partidas_ganhas": 10,
+    "partidas_totais": 198,
     "raios_ganhos": 0,
     "raios_totais": 1,
     "pontos_totais_raios": 37,
-    "trunfos_jogados_total": 4,
-    "pontos_capturados_trunfos": 13,
-    "valor_estrategico_trunfos": 18.0,
-    "maior_combo": 7,
-    "vazas_com_iniciativa": 10,
-    "vazas_mantidas": 7
+    "biscas_jogados_total": 4,
+    "pontos_capturados_biscas": 13,
+    "valor_estrategico_biscas": 18.0,
+    "maior_combo": 80,
+    "vazas_com_iniciativa": 5,
+    "vazas_mantidas": 10
 }

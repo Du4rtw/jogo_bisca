@@ -608,6 +608,8 @@ class Jogar:
   
         # Definindo quem fará a primeira jogada
         self.vez_jogador=random.randint(1,2)
+        
+        self.total_monte = len(cartas_baralho)
 
         return cartas_baralho
        
@@ -824,6 +826,14 @@ class Jogar:
         else:
             pass
 
+    def _desenhar_contador_monte(self):
+        texto = f"{len(self.monte)}/{self.total_monte}"
+        x = self.monte_x + 1
+        y = self.monte_y + ALTURA_CARTA + 2      
+        pyxel.text(x + 1, y + 1, texto, 0)       
+        pyxel.text(x, y, texto, 7)
+
+
     def _desenhar_carta_rotacionada(self, dest_x, dest_y, u, v):
         for x in range(LARGURA_CARTA):
             for y in range(ALTURA_CARTA):
@@ -904,6 +914,8 @@ class Jogar:
 
         self._desenhar_tally(cad_x + 23, cad_y + 11, self.jogador1.pontuacao_raios, 12)
         self._desenhar_tally(cad_x + 23, cad_y + 19, self.jogador2.pontuacao_raios, 8)
+
+        
         
     
     def draw(self):
@@ -917,6 +929,7 @@ class Jogar:
 
         # Monte (carta virada para baixo, fixa na mesa)
         self._desenhar_monte()
+        self._desenhar_contador_monte()
         self._desenhar_caderno()
 
         # As 5 cartas (3 da mão + a carta rotacionada), usando o recorte

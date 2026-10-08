@@ -2,6 +2,9 @@ import pyxel
 import json
 import random
 
+from estatisticas import SessaoEstatisticas
+from tela_estatisticas import TelaEstatisticas
+
 # Dimensões carta
 LARGURA_CARTA = 18
 ALTURA_CARTA = 28
@@ -221,6 +224,10 @@ class TelaFinalJogo:
 
 class Jogar:
     def __init__(self):
+
+        # Tela estatisticas
+        self.sessao = SessaoEstatisticas()
+        
         # mesa redonda 
         self.centro_x = 80
         self.centro_y = 60
@@ -574,6 +581,7 @@ class Jogar:
         random.shuffle(cartas_baralho)
         cartas_baralho[-1]["bisca"]="1"
         self.carta_bisca=cartas_baralho[-1]
+        self.baralho_completo = list(cartas_baralho) # "cópia" da lista e os dicionários continuam os mesmos, para no final ler quem recebeuu cada carta
 
         # Distribuindo cartas utilizando o .pop que seleciona a primeira carta do monte e remove ela
         for _ in range(3):
@@ -581,9 +589,9 @@ class Jogar:
             self.mao_j1[_]["jogador"]="1"
             self.mao_j2.append(cartas_baralho.pop(0))
             self.mao_j2[_]["jogador"]="2"
-  
-        # Definindo quem fará a primeira jogada
-        self.vez_jogador=random.randint(1,2)
+
+        self.sessao.iniciar_raio(self.baralho_completo, self.carta_bisca["naipe"])   # substitui o iniciar_raio()
+        self.vez_jogador = random.randint(1, 2) # Definindo quem fará a primeira jogada
 
         return cartas_baralho
        
@@ -627,6 +635,15 @@ class Jogar:
         else:
             self.jogador2.Adicionar_Pontos(pontuacao_mesa)
             #print(f"jogador 2 = {self.jogador2.pontuacao_mesa} ")
+
+        self.sessao.registrar_vaza(
+            jogador_inicial=self.jogador_inicial,
+            carta_inicial=self.carta_inicial,
+            carta_secundaria=self.carta_secundaria,
+            vencedor=vencedor,
+            naipe_bisca=naipe_bisca,
+            pontos_mesa=pontuacao_mesa,
+        )
 
         self.vez_jogador = vencedor
 
@@ -683,6 +700,14 @@ class Jogar:
             print("Raio empatado, não será somado pontuação") 
             print("Novo Jogo e estatisticas")
 
+        fim_partida = self.jogador1.pontuacao_raios > 3 or self.jogador2.pontuacao_raios > 3
+        self.sessao.finalizar_raio(
+            self.jogador1.pontuacao_mesa,
+            self.jogador2.pontuacao_mesa,
+            fim_partida=fim_partida,
+            venceu_partida=self.jogador1.pontuacao_raios > 3,
+        )
+
         # Zerar variaveis de pontuação de mesa
         self.jogador1.pontuacao_mesa = 0
         self.jogador2.pontuacao_mesa = 0
@@ -702,7 +727,11 @@ class Jogar:
                 and not self.pode_limpar
                 and self.carta_secundaria is None)    
 
-
+    def _pode_abrir_estatisticas(self):
+        return (self.carta_inicial is None
+            and self.carta_secundaria is None
+            and not self.pode_limpar
+            and self.carta_arrastando is None)
 
     def update(self):
         # Atalho para testar a tela final
@@ -713,6 +742,8 @@ class Jogar:
 
         if self.jogo_finalizado or self.fim_raio==True:
             return "Tela Final"
+        if pyxel.btnp(pyxel.KEY_E) and self._pode_abrir_estatisticas():
+            return "Estatisticas"
 
         self._arraste_carta()
 
@@ -914,26 +945,31 @@ class JogoBisca:
 
         self.cenariosJogo={
             "Menu Inicial": MenuInicial(),
-            "Jogar": Jogar()
+            "Jogar": Jogar(),
+            "Estatisticas": TelaEstatisticas()
         }
         self.cenarioAtual="Menu Inicial"
 
 
         pyxel.run(self.update, self.draw)
-        
-        
-        
+
     def update(self):
+        cenario_antes = self.cenarioAtual
         proximo_cenario = self.cenariosJogo[self.cenarioAtual].update()
-        
-        
+
         if proximo_cenario == "Tela Final" and "Tela Final" not in self.cenariosJogo:
             self.cenariosJogo["Tela Final"] = TelaFinalJogo(self.cenariosJogo["Jogar"])
 
+        if proximo_cenario == "Estatisticas" and cenario_antes != "Estatisticas":
+             self.cenariosJogo["Estatisticas"].abrir(
+                voltar_para=cenario_antes,
+                sessao=self.cenariosJogo["Jogar"].sessao,
+             )
+
         self.cenarioAtual = proximo_cenario
-        
 
     def draw(self):
+        ...
         pyxel.cls(0)
         self.cenariosJogo[self.cenarioAtual].draw()
         

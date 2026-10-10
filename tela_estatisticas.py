@@ -27,15 +27,10 @@ VOLTAR_X, VOLTAR_Y, VOLTAR_W, VOLTAR_H = 8, 113, 44, 7
 
 
 class TelaEstatisticas:
-    def __init__(self):
-        self.voltar_para = "Jogar"
-        self.resumo = estatisticas.resumo(estatisticas.DADOS_PADRAO)
-
-    def abrir(self, voltar_para, sessao=None):
-        # guarda de onde veio, le o JSON UMA vez
+    def __init__(self, voltar_para="Jogar", sessao=None):
         self.voltar_para = voltar_para
-        sorte = sessao.sorte_partida() if sessao else (50.0, 50.0)
-        self.resumo = estatisticas.resumo(estatisticas.carregar_estatisticas(), sorte) #verificar os dois acima
+        sorte = sessao.sorte_partida() if sessao else (50.0, 50.0) # Espressão  condicional : valor_se_verdadeiro if condicao else valor_se_falso
+        self.resumo = estatisticas.resumo(estatisticas.carregar_estatisticas(), sorte)
 
     def _clicou_voltar(self):
         return (pyxel.btnp(pyxel.MOUSE_BUTTON_LEFT)

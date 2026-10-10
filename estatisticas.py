@@ -34,7 +34,6 @@ DADOS_PADRAO = {
     "pontos_maior_combo": 0,
 }
 
-
 def carregar_estatisticas():
     if not os.path.exists(ARQUIVO_ESTATISTICAS):
         salvar_estatisticas(DADOS_PADRAO)
@@ -47,7 +46,6 @@ def carregar_estatisticas():
     except Exception as e:
         print(f"Erro ao ler arquivo: {e}")
         return DADOS_PADRAO.copy()
-
 
 def salvar_estatisticas(dados):
     # Salva o dicionario no JSON
@@ -88,8 +86,6 @@ def calc_disputa(sorte_p1, sorte_bot):
     pct_p1 = sorte_p1 / total * 100.0
     return pct_p1, 100.0 - pct_p1
 
-
-
 #Função que prepara para a tela mostrar
 def resumo(dados, sorte_partida=(50.0, 50.0)):
     # Atualização chamada do tela_est
@@ -115,6 +111,7 @@ def resumo(dados, sorte_partida=(50.0, 50.0)):
     }
 
 
+
 class SessaoEstatisticas:
     def __init__(self):
         self._sorte_partida_p1 = 0
@@ -133,7 +130,6 @@ class SessaoEstatisticas:
         self._pontos_combo_atual = 0
         self._maior_combo = 0
         self._pontos_maior_combo = 0
-
 
     def registrar_vaza(self, jogador_inicial, carta_inicial, carta_secundaria, vencedor, naipe_bisca, pontos_mesa):
         #Identificas se p1 jogou a primeira
@@ -191,8 +187,10 @@ class SessaoEstatisticas:
 
         dados = carregar_estatisticas()
 
-        dados["raios_totais"] += 1
-        dados["pontos_totais_raios"] += int(pontos_j1)
+        # Impedindo contar empates
+        if pontos_j1 != pontos_j2: 
+            dados["raios_totais"] += 1
+            dados["pontos_totais_raios"] += int(pontos_j1)
         if pontos_j1 > pontos_j2:
             dados["raios_ganhos"] += 1
 

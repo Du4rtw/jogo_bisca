@@ -25,8 +25,6 @@ class Personagem:
         self.nome = nome
         self.pontuacao_mesa = pontuacao_mesa
         self.pontuacao_raios = pontuacao_raios
-        
-
         self.bot = bool(bot)
 
     def Adicionar_Pontos(self,pontos):
@@ -93,7 +91,6 @@ class MenuInicial:
 
 
 
-
     def update(self):
         if self._verificar_clique_jogar():
             return "Jogar"
@@ -108,13 +105,26 @@ class MenuInicial:
         self._botao_jogar()
 
 
+
 class TelaFinalJogo:
     def __init__(self, partida):
-        
         self.partida = partida
+        self.hover_botao = False 
+
+
 
     def update(self):
+        self.hover_botao = (90 <= pyxel.mouse_x <= 150) and (80 <= pyxel.mouse_y <= 95)
 
+        if pyxel.btnp(pyxel.MOUSE_BUTTON_LEFT) and self.hover_botao:
+            # Checa se algum jogador alcançou 4 raios para o fim da partida
+            if self.partida.jogador1.pontuacao_raios >= 4 or self.partida.jogador2.pontuacao_raios >= 4:
+                return "Estatisticas"
+            else:
+                self.partida._resetar_raio()
+                self.partida.fim_raio = False
+                return "Jogar"
+                
         return "Tela Final"
     
     def _desenhar_tally(self, x, y, quantidade, cor):
@@ -129,7 +139,9 @@ class TelaFinalJogo:
             pyxel.line(x - 1, meio_y, x + (2 * espaco) + 1, meio_y, cor)
 
     def _desenhar_seta(self, x, y, direcao, texto):
-        cor_seta = 10 
+        # SE O MOUSE ESTIVER EM CIMA, AS CORES MUDAM!
+        cor_seta = 9 if self.hover_botao else 10 
+        cor_texto = 8 if self.hover_botao else 0
         cor_contorno = 0
         largura_texto = len(texto) * 4
 
@@ -141,41 +153,41 @@ class TelaFinalJogo:
             pyxel.line(x+6, y+3, x+6, y+5, cor_seta) 
             pyxel.text(x + 14, y + 2, texto, 0)
         else:
-            pyxel.text(x - largura_texto - 4, y + 2, texto, 0)
+            pyxel.text(x - largura_texto - 4, y + 2, texto, cor_texto)
             pyxel.rectb(x, y+2, 6, 5, cor_contorno)
             pyxel.rect(x+1, y+3, 5, 3, cor_seta)
             pyxel.trib(x+6, y, x+12, y+4, x+6, y+8, cor_contorno)
             pyxel.tri(x+7, y+1, x+11, y+4, x+7, y+7, cor_seta)
             pyxel.line(x+6, y+3, x+6, y+5, cor_seta) 
 
+
+
     def draw(self):
-       
         pyxel.cls(3)
         self.partida._desenhar_jogadores()
         self.partida._desenhar_mesa()
-        venceu_p1 = self.partida.jogador1.pontuacao_raios >= 4
-        if self.partida.jogador1.pontuacao_raios==4 or self.partida.jogador2.pontuacao_raios==4:
-            texto_vitoria = "PLAYER 1 VENCEU!" if venceu_p1 else "BOT VENCEU!"
-            cor_vitoria=7
-            larg_vitoria = len(texto_vitoria) * 4
-            pyxel.text(80 - (larg_vitoria // 2), 10, texto_vitoria, cor_vitoria)
-        
-        texto_vitoria = "PLAYER 1 VENCEU O RAIO!" if self.partida.jogador1.pontuacao_raios>self.partida.jogador2.pontuacao_raios else "BOT VENCEU O RAIO!"
-        cor_vitoria=7
+        p1 = self.partida.jogador1
+        bot = self.partida.jogador2
+        partida_acabou = p1.pontuacao_raios >= 4 or bot.pontuacao_raios >= 4
+
+        if partida_acabou:
+            texto_vitoria = "PLAYER 1 VENCEU!" if p1.pontuacao_raios >= 4 else "BOT VENCEU!"
+        elif p1.pontuacao_mesa > bot.pontuacao_mesa:
+            texto_vitoria = "PLAYER 1 VENCEU O RAIO!"
+        elif bot.pontuacao_mesa > p1.pontuacao_mesa:
+            texto_vitoria = "BOT VENCEU O RAIO!"
+        else:
+            texto_vitoria = "RAIO EMPATADO!"
+
         larg_vitoria = len(texto_vitoria) * 4
-        pyxel.text(80 - (larg_vitoria // 2), 10, texto_vitoria, cor_vitoria)
-
-
-    
+        pyxel.text(80 - (larg_vitoria // 2), 10, texto_vitoria, 7)
         cad_x, cad_y = 20, 20
         cad_largura, cad_altura = 120, 75
-
         
         pyxel.rect(cad_x + 2, cad_y + 2, cad_largura, cad_altura, 1)
         pyxel.rect(cad_x, cad_y, cad_largura, cad_altura, 7)
         pyxel.rectb(cad_x, cad_y, cad_largura, cad_altura, 13)
         pyxel.line(cad_x + 60, cad_y, cad_x + 60, cad_y + cad_altura, 13) 
-
         
         espaco_espiral = 6
         quantidade_argolas = cad_altura // espaco_espiral
@@ -183,42 +195,31 @@ class TelaFinalJogo:
             ay = cad_y + 4 + i * espaco_espiral
             pyxel.circb(80, ay, 2, 5)
             pyxel.pset(80, ay, 6)
-
         
         centro_esq = cad_x + 30
-        
         texto_p1 = "Player 1"
         pyxel.text(centro_esq - (len(texto_p1)*4//2), cad_y + 8, texto_p1, 12)
-        
         lbl_pontos = "Pontuacao"
         pyxel.text(centro_esq - (len(lbl_pontos)*4//2), cad_y + 22, lbl_pontos, 12)
         pts_p1 = str(self.partida.jogador1.pontuacao_mesa)
         pyxel.text(centro_esq - (len(pts_p1)*4//2), cad_y + 30, pts_p1, 0)
-        
         lbl_raios = "Raios"
         pyxel.text(centro_esq - (len(lbl_raios)*4//2), cad_y + 44, lbl_raios, 12)
-        
         self._desenhar_tally(centro_esq - 4, cad_y + 52, self.partida.jogador1.pontuacao_raios, 12)
-
         
         centro_dir = cad_x + 90
-        
         texto_bot = "Bot"
         pyxel.text(centro_dir - (len(texto_bot)*4//2), cad_y + 8, texto_bot, 8)
-        
         pyxel.text(centro_dir - (len(lbl_pontos)*4//2), cad_y + 22, lbl_pontos, 8)
         pts_bot = str(self.partida.jogador2.pontuacao_mesa)
         pyxel.text(centro_dir - (len(pts_bot)*4//2), cad_y + 30, pts_bot, 0)
-        
         pyxel.text(centro_dir - (len(lbl_raios)*4//2), cad_y + 44, lbl_raios, 8)
         self._desenhar_tally(centro_dir - 4, cad_y + 52, self.partida.jogador2.pontuacao_raios, 8)
 
-       
-        if self.partida.jogador1.pontuacao_raios==4 or self.partida.jogador2.pontuacao_raios==4:
-            self._desenhar_seta(cad_x + cad_largura-2, cad_y + cad_altura - 12, "dir", "Estatisticas")     
+        if partida_acabou:
+            self._desenhar_seta(cad_x + cad_largura-2, cad_y + cad_altura - 12, "dir", "Estatisticas")
         else:
             self._desenhar_seta(cad_x + cad_largura-2, cad_y + cad_altura - 12, "dir", "Continuar")
-
 
         
 
@@ -252,6 +253,7 @@ class Jogar:
         self.aguardar_bot=False
         self.contador_jogada_bot=None
         self.fim_raio=False
+        self.vencedor_raio = 0 
 
         # Definições do personagem
         self.jogador1 = Personagem("Personagem1",0,0,False)
@@ -377,7 +379,7 @@ class Jogar:
                         carta["y"] <= pyxel.mouse_y <= carta["y"] + altura):
                     self.cartas_mesa.pop(i)
                     self.cartas_mesa.append(carta)
-                    self.carta_arrastando = carta          # <-- referência, não índice
+                    self.carta_arrastando = carta       
                     self.offset_x = pyxel.mouse_x - carta["x"]
                     self.offset_y = pyxel.mouse_y - carta["y"]
                     break
@@ -456,7 +458,6 @@ class Jogar:
         return carta_escolhida
 
     def _bot_carta(self):
-
         '''
         # Visualizar cartas do bot
         print() 
@@ -465,7 +466,6 @@ class Jogar:
             print(carta["numCarta"],carta["naipe"])
         print()
         '''
-
         if not self.mao_j2:
             return None
 
@@ -592,6 +592,11 @@ class Jogar:
 
         self.sessao.iniciar_raio(self.baralho_completo, self.carta_bisca["naipe"])   # substitui o iniciar_raio()
         self.vez_jogador = random.randint(1, 2) # Definindo quem fará a primeira jogada
+  
+        # Definindo quem fará a primeira jogada
+        self.vez_jogador=random.randint(1,2)
+        
+        self.total_monte = len(cartas_baralho)
 
         return cartas_baralho
        
@@ -607,7 +612,7 @@ class Jogar:
 
             # se quem vai responder agora é o bot, arma o delay antes dele jogar
             if self.jogador_secundario == 2 and self.mao_j2:
-                self.contador_jogada_bot = pyxel.frame_count + 30  # ~0.5s de "pensamento"
+                self.contador_jogada_bot = pyxel.frame_count + 30 
                 self.aguardar_bot = True
 
         elif self.carta_secundaria is None:
@@ -631,11 +636,10 @@ class Jogar:
         pontuacao_mesa = int(self.carta_inicial["valor"]) + int(self.carta_secundaria["valor"])
         if vencedor == 1:
             self.jogador1.Adicionar_Pontos(pontuacao_mesa)
-            #print(f"jogador1 = {self.jogador1.pontuacao_mesa}")
+     
         else:
             self.jogador2.Adicionar_Pontos(pontuacao_mesa)
-            #print(f"jogador 2 = {self.jogador2.pontuacao_mesa} ")
-
+         
         self.sessao.registrar_vaza(
             jogador_inicial=self.jogador_inicial,
             carta_inicial=self.carta_inicial,
@@ -646,18 +650,13 @@ class Jogar:
         )
 
         self.vez_jogador = vencedor
-
-        # Arma o timer de 60 frames para limpar a mesa visualmente
+       
         self.contador_frame=pyxel.frame_count+60
         self.pode_limpar=True      
-
-        # RETIRAMOS AS FUNÇÕES DE PESCAR E SOMAR RAIO DAQUI!
-        # Elas vão acontecer só quando a mesa for limpa no update.
 
         return vencedor
 
 
-    
     
     def _proximo_pescar(self,jogador):
    
@@ -673,32 +672,18 @@ class Jogar:
         return
 
     def _pontuacao_raio(self):
-       
         if self.monte or self.mao_j1 or self.mao_j2:
             return
 
-        
-
-        # Definindo quem ganhou o raio e vendo se terminou o jogo
-        # Mudar esses prints para futuras telas
         if self.jogador1.pontuacao_mesa > self.jogador2.pontuacao_mesa:
             self.jogador1.pontuacao_raios += 1
-            print(f"Jogador vencedor deste raio: {self.jogador1.nome}") 
-            self.fim_raio=True
-            if self.jogador1.pontuacao_raios > 3:
-                print(f"Acabou o jogo, {self.jogador1.nome} tem {self.jogador1.pontuacao_raios} pontosde raio")
-                print("Tela final_Partida")
-
+            self.vencedor_raio = 1
         elif self.jogador2.pontuacao_mesa > self.jogador1.pontuacao_mesa:
             self.jogador2.pontuacao_raios += 1
-            print(f"Jogador vencedor deste raio: {self.jogador2.nome}") 
-            self.fim_raio=True
-            if self.jogador2.pontuacao_raios > 3:
-                print(f"Acabou o jogo, {self.jogador2.nome} tem {self.jogador2.pontuacao_raios} pontos de raio")
-                print("Tela final_Partida")
-        else: 
-            print("Raio empatado, não será somado pontuação") 
-            print("Novo Jogo e estatisticas")
+            self.vencedor_raio = 2
+        else:
+            self.vencedor_raio = 0
+        self.fim_raio = True
 
         fim_partida = self.jogador1.pontuacao_raios > 3 or self.jogador2.pontuacao_raios > 3
         self.sessao.finalizar_raio(
@@ -707,20 +692,6 @@ class Jogar:
             fim_partida=fim_partida,
             venceu_partida=self.jogador1.pontuacao_raios > 3,
         )
-
-        # Zerar variaveis de pontuação de mesa
-        self.jogador1.pontuacao_mesa = 0
-        self.jogador2.pontuacao_mesa = 0
-        self.vez_jogador=0
-        self.mao_j1=[]
-        self.mao_j2=[]
-        self.carta_bisca=[]
-        self.cartas_mesa = []
-        
-        self.monte = self._inicio_jogo() 
-        self._sincronizar_mao_j1()
-        
-        self._carta_bisca()
 
     def _pode_jogador_jogar(self):
         return (not self.aguardar_bot
@@ -732,22 +703,55 @@ class Jogar:
             and self.carta_secundaria is None
             and not self.pode_limpar
             and self.carta_arrastando is None)
+    def _resetar_raio(self):
+        # Placar do raio
+        self.jogador1.pontuacao_mesa = 0
+        self.jogador2.pontuacao_mesa = 0
+
+        # Estado da jogada e timers
+        self.carta_inicial = None
+        self.carta_secundaria = None
+        self.pode_limpar = False
+        self.aguardar_bot = False
+        self.carta_arrastando = None
+        self.desenhar_area = False
+        self.mao_j1 = []
+        self.mao_j2 = []
+        self.carta_bisca = []
+        self.cartas_mesa = []
+        self.monte = self._inicio_jogo()
+        self._sincronizar_mao_j1()
+        self._carta_bisca()
+
+
+        if self.vez_jogador == 2 and self.mao_j2:
+            self.contador_jogada_bot = pyxel.frame_count + 30
+            self.aguardar_bot = True
+
+
 
     def update(self):
-        # Atalho para testar a tela final
+        
+        if pyxel.btnp(pyxel.KEY_R):
+            self.jogador1.pontuacao_mesa = 75
+            self.jogador2.pontuacao_mesa = 45
+            self.jogador1.pontuacao_raios += 1
+            self.vencedor_raio = 1
+            self.fim_raio = True
+
         if pyxel.btnp(pyxel.KEY_F):
             self.jogador1.pontuacao_raios = 4
             self.jogador2.pontuacao_raios = 2
+            self.vencedor_raio = 1
             self.jogo_finalizado = True
 
-        if self.jogo_finalizado or self.fim_raio==True:
+        if self.jogo_finalizado or self.fim_raio == True:
             return "Tela Final"
         if pyxel.btnp(pyxel.KEY_E) and self._pode_abrir_estatisticas():
             return "Estatisticas"
 
         self._arraste_carta()
 
-        # Limpeza da mesa e compra de cartas
         if self.pode_limpar and pyxel.frame_count >= self.contador_frame:
             self.cartas_mesa = [
                 c for c in self.cartas_mesa 
@@ -772,8 +776,7 @@ class Jogar:
             if self.vez_jogador == 2 and self.mao_j2:
                 self.contador_jogada_bot = pyxel.frame_count + 30
                 self.aguardar_bot = True
-
-        # Turno do bot
+  
         if self.aguardar_bot and pyxel.frame_count >= self.contador_jogada_bot:
             self.aguardar_bot = False
             carta_bot = self._bot_carta()
@@ -825,6 +828,13 @@ class Jogar:
         else:
             pass
 
+    def _desenhar_contador_monte(self):
+        texto = f"{len(self.monte)}/{self.total_monte}"
+        x = self.monte_x + 1
+        y = self.monte_y + ALTURA_CARTA + 2      
+        pyxel.text(x + 1, y + 1, texto, 0)       
+        pyxel.text(x, y, texto, 7)
+
     def _desenhar_carta_rotacionada(self, dest_x, dest_y, u, v):
         for x in range(LARGURA_CARTA):
             for y in range(ALTURA_CARTA):
@@ -858,7 +868,6 @@ class Jogar:
             pyxel.pset(x, y + i, cor)
             pyxel.pset(x + largura - 1, y + i, cor)
 
-
     def _desenhar_tally(self, x, y, quantidade, cor):
        
         espaco = 3          
@@ -868,7 +877,6 @@ class Jogar:
         for i in range(verticais):
             tx = x + i * espaco
             pyxel.line(tx, y, tx, y + altura_traco, cor)
-
    
         if quantidade >= 4:
             meio_y = y + (altura_traco // 2)
@@ -884,7 +892,6 @@ class Jogar:
         pyxel.rect(cad_x, cad_y, cad_largura, cad_altura, 7)
         pyxel.rectb(cad_x, cad_y, cad_largura, cad_altura, 13)
 
-      
         espaco_espiral = 4
         quantidade_argolas = cad_altura // espaco_espiral
         for i in range(quantidade_argolas):
@@ -895,10 +902,8 @@ class Jogar:
 
         pyxel.line(cad_x + 5, cad_y + 8, cad_x + cad_largura - 2, cad_y + 8, 6)
 
-    
         raio_atual = self.jogador1.pontuacao_raios + self.jogador2.pontuacao_raios + 1
         pyxel.text(cad_x + 5, cad_y + 3, f"Raio {raio_atual}", 0)
-
        
         pyxel.text(cad_x + 5, cad_y + 11, "P1", 12)
         pyxel.text(cad_x + 5, cad_y + 19, "BOT", 8)
@@ -906,7 +911,8 @@ class Jogar:
         self._desenhar_tally(cad_x + 23, cad_y + 11, self.jogador1.pontuacao_raios, 12)
         self._desenhar_tally(cad_x + 23, cad_y + 19, self.jogador2.pontuacao_raios, 8)
         
-    
+
+        
     def draw(self):
         pyxel.cls(3)
 
@@ -918,6 +924,7 @@ class Jogar:
 
         # Monte (carta virada para baixo, fixa na mesa)
         self._desenhar_monte()
+        self._desenhar_contador_monte()
         self._desenhar_caderno()
 
         # As 5 cartas (3 da mão + a carta rotacionada), usando o recorte
@@ -940,42 +947,41 @@ class JogoBisca:
         pyxel.init(160, 120, title="Bisca", fps=60)
         pyxel.fullscreen(True) 
         pyxel.mouse(True) 
-
         pyxel.images[0].load(0, 0, "Cards.png")
 
-        self.cenariosJogo={
+        self.cenariosJogo = {
             "Menu Inicial": MenuInicial(),
             "Jogar": Jogar(),
             "Estatisticas": TelaEstatisticas()
         }
-        self.cenarioAtual="Menu Inicial"
-
-
+        self.cenarioAtual = "Menu Inicial"
         pyxel.run(self.update, self.draw)
+
+
 
     def update(self):
         cenario_antigo = self.cenarioAtual
         proximo_cenario = self.cenariosJogo[self.cenarioAtual].update()
 
-        if proximo_cenario !=  cenario_antigo:
+        if proximo_cenario != cenario_antigo:
 
             if proximo_cenario == "Menu Inicial":
                 self.cenariosJogo["Jogar"] = Jogar()
-                if "Tela Final" in self.cenariosJogo:
-                    del self.cenariosJogo["Tela Final"]
 
             elif proximo_cenario == "Tela Final":
                 self.cenariosJogo["Tela Final"] = TelaFinalJogo(self.cenariosJogo["Jogar"])
 
             elif proximo_cenario == "Estatisticas":
-                self.cenariosJogo["Estatisticas"].abrir(voltar_para=cenario_antigo,sessao=self.cenariosJogo["Jogar"].sessao,) # ver se e necessario
+                destino = "Menu Inicial" if cenario_antigo == "Tela Final" else cenario_antigo
+                self.cenariosJogo["Estatisticas"] = TelaEstatisticas(destino,self.cenariosJogo["Jogar"].sessao)
 
         self.cenarioAtual = proximo_cenario
+
+
 
     def draw(self):
         
         pyxel.cls(0)
         self.cenariosJogo[self.cenarioAtual].draw()
-        
 
 JogoBisca()

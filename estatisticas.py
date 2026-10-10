@@ -6,12 +6,6 @@ ARQUIVO_ESTATISTICAS = "estatisticas.json"
 PESO_BISCA = 2    # valor * PESO_BISCA, sortometro
 BONUS_BISCA = 2   # biscas valor 0 valem isso de pontos
 
-
-def valor_estrategico_bisca(carta):
-    # forca da carta
-    return int(carta["forca"])
-
-
 def pontos_sorte(carta, naipe_bisca):
     # Faz a equivalencia de sorte por valor
     valor = int(carta["valor"])
@@ -37,8 +31,7 @@ DADOS_PADRAO = {
 
     # Dominio da mesa
     "maior_combo": 0,
-    "vazas_com_iniciativa": 0,       # vazas em que o P1 estava "com a mao" (jogou primeiro)
-    "vazas_mantidas": 0,             # dessas, quantas ele venceu (manteve o controle)
+    "pontos_maior_combo": 0,
 }
 
 
@@ -95,12 +88,9 @@ def calc_disputa(sorte_p1, sorte_bot):
     pct_p1 = sorte_p1 / total * 100.0
     return pct_p1, 100.0 - pct_p1
 
-def calc_controle_mesa(dados):
-    # sequencia de vazas que ele pegou, mantaze vitoria
-    return _percentual(dados["vazas_mantidas"], dados["vazas_com_iniciativa"])
 
 
-#Função que prepara para a tele mostrar
+#Função que prepara para a tela mostrar
 def resumo(dados, sorte_partida=(50.0, 50.0)):
     # Atualização chamada do tela_est
     sorte_p1, sorte_bot = sorte_partida
@@ -121,7 +111,7 @@ def resumo(dados, sorte_partida=(50.0, 50.0)):
         "sorte_bot": sorte_bot,
 
         "maior_combo": dados["maior_combo"],
-        "controle_mesa": calc_controle_mesa(dados),
+        "pontos_maior_combo": dados["pontos_maior_combo"],
     }
 
 
@@ -140,42 +130,34 @@ class SessaoEstatisticas:
         self._pontos_capt_biscas = 0
         self._valor_estrategico = 0.0
         self._combo_atual = 0
+        self._pontos_combo_atual = 0
         self._maior_combo = 0
-        self._vazas_iniciativa = 0
-        self._vazas_mantidas = 0
+        self._pontos_maior_combo = 0
 
-    def iniciar_partida(self):
-        #Zera a sorte
-        self._sorte_partida_p1 = 0
-        self._sorte_partida_bot = 0
-        self._partida_encerrada = False
 
-    def registrar_vaza(self, jogador_inicial, carta_inicial, carta_secundaria,
-                       vencedor, naipe_bisca, pontos_mesa):
+    def registrar_vaza(self, jogador_inicial, carta_inicial, carta_secundaria, vencedor, naipe_bisca, pontos_mesa):
         #Identificas se p1 jogou a primeira
-        p1_iniciou = (jogador_inicial == 1)
-        carta_p1 = carta_inicial if p1_iniciou else carta_secundaria
+        carta_p1 = carta_inicial if jogador_inicial == 1 else carta_secundaria
         p1_venceu = (vencedor == 1)
 
         # Eficiencia de biscas
         if carta_p1["naipe"] == naipe_bisca:
             self._biscas_jogados += 1
-            self._valor_estrategico += valor_estrategico_bisca(carta_p1) #transforma em um int de força
+            self._valor_estrategico += int(carta_p1["forca"]) #transforma em um int de força
             if p1_venceu:
                 self._pontos_capt_biscas += int(pontos_mesa)
 
-        # Dominio da mesa
-        if p1_iniciou:
-            self._vazas_iniciativa += 1
-            if p1_venceu:
-                self._vazas_mantidas += 1
-
-        # Dominio da mesa musar o controle
+        # Combo: vazas e pontos somatoria
         if p1_venceu:
             self._combo_atual += 1
-            self._maior_combo = max(self._maior_combo, self._combo_atual) #Retorna o maior valor
+            self._pontos_combo_atual += int(pontos_mesa)
+            # recorde = mais vazas; em empate de vazas, o que fez mais pontos como funciona??
+            if (self._combo_atual, self._pontos_combo_atual) > (self._maior_combo, self._pontos_maior_combo):
+                self._maior_combo = self._combo_atual
+                self._pontos_maior_combo = self._pontos_combo_atual
         else:
             self._combo_atual = 0
+            self._pontos_combo_atual = 0
 
     # Sortometro
     def _sorte_do_raio(self):
@@ -223,8 +205,11 @@ class SessaoEstatisticas:
         dados["pontos_capturados_biscas"] += self._pontos_capt_biscas
         dados["valor_estrategico_biscas"] += self._valor_estrategico
 
-        dados["maior_combo"] = max(dados["maior_combo"], self._maior_combo)
-        dados["vazas_com_iniciativa"] += self._vazas_iniciativa
-        dados["vazas_mantidas"] += self._vazas_mantidas
+        if self._maior_combo > dados["maior_combo"]: # Maior a quantidade de combo
+            dados["maior_combo"] = self._maior_combo
+            dados["pontos_maior_combo"] = self._pontos_maior_combo
+        elif self._maior_combo == dados["maior_combo"]: # Igual mas mais pontos
+            if self._pontos_maior_combo > dados["pontos_maior_combo"]:
+                dados["pontos_maior_combo"] = self._pontos_maior_combo
 
         salvar_estatisticas(dados)

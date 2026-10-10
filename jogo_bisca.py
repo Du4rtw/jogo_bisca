@@ -954,25 +954,28 @@ class JogoBisca:
         pyxel.run(self.update, self.draw)
 
     def update(self):
-        cenario_antes = self.cenarioAtual
+        cenario_antigo = self.cenarioAtual
         proximo_cenario = self.cenariosJogo[self.cenarioAtual].update()
 
-        if proximo_cenario == "Tela Final" and "Tela Final" not in self.cenariosJogo:
-            self.cenariosJogo["Tela Final"] = TelaFinalJogo(self.cenariosJogo["Jogar"])
+        if proximo_cenario !=  cenario_antigo:
 
-        if proximo_cenario == "Estatisticas" and cenario_antes != "Estatisticas":
-             self.cenariosJogo["Estatisticas"].abrir(
-                voltar_para=cenario_antes,
-                sessao=self.cenariosJogo["Jogar"].sessao,
-             )
+            if proximo_cenario == "Menu Inicial":
+                self.cenariosJogo["Jogar"] = Jogar()
+                if "Tela Final" in self.cenariosJogo:
+                    del self.cenariosJogo["Tela Final"]
+
+            elif proximo_cenario == "Tela Final":
+                self.cenariosJogo["Tela Final"] = TelaFinalJogo(self.cenariosJogo["Jogar"])
+
+            elif proximo_cenario == "Estatisticas":
+                self.cenariosJogo["Estatisticas"].abrir(voltar_para=cenario_antigo,sessao=self.cenariosJogo["Jogar"].sessao,) # ver se e necessario
 
         self.cenarioAtual = proximo_cenario
 
     def draw(self):
-        ...
+        
         pyxel.cls(0)
         self.cenariosJogo[self.cenarioAtual].draw()
         
-
 
 JogoBisca()

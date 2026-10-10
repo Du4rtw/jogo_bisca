@@ -290,7 +290,7 @@ class TelaFinalJogo:
 class Jogar:
     def __init__(self):
 
-        # Tela estatisticas
+        #instância
         self.sessao = SessaoEstatisticas()
         
         # mesa redonda 
@@ -975,6 +975,9 @@ class Jogar:
         self._desenhar_tally(cad_x + 23, cad_y + 11, self.jogador1.pontuacao_raios, 12)
         self._desenhar_tally(cad_x + 23, cad_y + 19, self.jogador2.pontuacao_raios, 8)
         
+    def _desenhar_E(self):
+        pyxel.text(8, 114 , "[E] Est.", 7)
+
 
         
     def draw(self):
@@ -990,6 +993,9 @@ class Jogar:
         self._desenhar_monte()
         self._desenhar_contador_monte()
         self._desenhar_caderno()
+
+        # Mostrar o "E"
+        self._desenhar_E()
 
         # As 5 cartas (3 da mão + a carta rotacionada), usando o recorte
         for carta in self.cartas_mesa:

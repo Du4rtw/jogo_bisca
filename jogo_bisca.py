@@ -4,6 +4,7 @@ import random
 
 from estatisticas import SessaoEstatisticas
 from tela_estatisticas import TelaEstatisticas
+from audio import GerenciadorAudio
 
 # Dimensões carta
 LARGURA_CARTA = 18
@@ -289,6 +290,9 @@ class TelaFinalJogo:
 
 class Jogar:
     def __init__(self):
+
+        # Musicas
+        self.audio = GerenciadorAudio()
 
         #instância
         self.sessao = SessaoEstatisticas()
@@ -795,7 +799,8 @@ class Jogar:
 
 
     def update(self):
-        
+        self.audio.atualizar() # tecla M para mutar
+
         if pyxel.btnp(pyxel.KEY_R):
             self.jogador1.pontuacao_mesa = 75
             self.jogador2.pontuacao_mesa = 45
@@ -982,6 +987,7 @@ class Jogar:
         
     def draw(self):
         pyxel.cls(3)
+        self.audio.desenhar()
 
         self._desenhar_jogadores()
 

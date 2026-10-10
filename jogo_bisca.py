@@ -4,6 +4,7 @@ import random
 
 from estatisticas import SessaoEstatisticas
 from tela_estatisticas import TelaEstatisticas
+from audio import GerenciadorAudio
 
 # Dimensões carta
 LARGURA_CARTA = 18
@@ -37,6 +38,20 @@ class MenuInicial:
     def __init__(self):
         pass
 
+    RODAPE_TEXTO = "(c) R. Prescendo & D. Wiesel"
+    RODAPE_Y = 111
+
+    def _mouse_no_rodape(self):
+        return pyxel.mouse_y >= self.RODAPE_Y - 2  # faixa de ~9px na base
+
+    def _verificar_clique_rodape(self):
+        return pyxel.btnp(pyxel.MOUSE_BUTTON_LEFT) and self._mouse_no_rodape()
+
+    def _desenhar_rodape(self):
+        largura = len(self.RODAPE_TEXTO) * 4          # fonte : 4px por caractere
+        x = (160 - largura) // 2
+        pyxel.text(x, self.RODAPE_Y, self.RODAPE_TEXTO, 7)
+    
     def _verificar_clique_jogar(self):
         if pyxel.btnp(pyxel.MOUSE_BUTTON_LEFT):
             if 60<=pyxel.mouse_x<=100 and 60<=pyxel.mouse_y<=70:
@@ -94,6 +109,8 @@ class MenuInicial:
     def update(self):
         if self._verificar_clique_jogar():
             return "Jogar"
+        if self._verificar_clique_rodape():
+            return "Creditos"
         else:
             return "Menu Inicial"
 
@@ -103,6 +120,54 @@ class MenuInicial:
         pyxel.cls(4)
         self._desenhar_titulo_bisca(66,25)
         self._botao_jogar()
+        self._desenhar_rodape()
+
+
+
+class TelaCreditos:
+    def __init__(self):
+        # Botão voltar
+        self.btn_x, self.btn_y, self.btn_w, self.btn_h = 118, 106, 38, 10
+        pyxel.images[1].load(0, 0, "Creditos.png")
+
+    def _clique_voltar(self):
+        return (pyxel.btnp(pyxel.MOUSE_BUTTON_LEFT)
+                and self.btn_x <= pyxel.mouse_x <= self.btn_x + self.btn_w
+                and self.btn_y <= pyxel.mouse_y <= self.btn_y + self.btn_h)
+
+    def _desenhar_botao_voltar(self):
+        hover = (self.btn_x <= pyxel.mouse_x <= self.btn_x + self.btn_w
+                 and self.btn_y <= pyxel.mouse_y <= self.btn_y + self.btn_h)
+        pyxel.rect(self.btn_x, self.btn_y, self.btn_w, self.btn_h, 5 if hover else 1)
+        pyxel.text(self.btn_x + 7, self.btn_y + 3, "Voltar", 7)
+
+    def _texto_centralizado(self, y, texto, cor):
+        pyxel.text((160 - len(texto) * 4) // 2, y, texto, cor)
+
+    def update(self):
+        if self._clique_voltar() or pyxel.btnp(pyxel.KEY_ESCAPE):
+            return "Menu Inicial"
+        return "Creditos"
+
+    def draw(self):
+        pyxel.cls(1)
+
+        self._texto_centralizado(4, "CREDITOS", 10)
+
+        # Rostos 40x40 (banco 1): Rafael em u=0, Daniel em u=40
+        pyxel.blt(18, 18, 1, 0, 0, 44, 44)
+        pyxel.blt(98, 18, 1, 44, 0, 44, 44)
+
+        pyxel.text(40 - len("Rafael Prescendo") * 4 // 2, 66, "Rafael Prescendo", 7)
+        pyxel.text(40 - len("Dev") * 4 // 2, 72, "Dev", 13)
+
+        pyxel.text(120 - len("Daniel D. Wiesel") * 4 // 2, 66, "Daniel D. Wiesel", 7)
+        pyxel.text(120 - len("Dev") * 4 // 2, 72, "Dev", 13)
+
+        self._texto_centralizado(85, "FURG - 2026", 7)
+        self._texto_centralizado(94, "Obrigado por jogar!", 10)
+
+        self._desenhar_botao_voltar()
 
 
 
@@ -226,7 +291,10 @@ class TelaFinalJogo:
 class Jogar:
     def __init__(self):
 
-        # Tela estatisticas
+        # Musicas
+        self.audio = GerenciadorAudio()
+
+        #instância
         self.sessao = SessaoEstatisticas()
         
         # mesa redonda 
@@ -731,7 +799,8 @@ class Jogar:
 
 
     def update(self):
-        
+        self.audio.atualizar() # tecla M para mutar
+
         if pyxel.btnp(pyxel.KEY_R):
             self.jogador1.pontuacao_mesa = 75
             self.jogador2.pontuacao_mesa = 45
@@ -911,10 +980,14 @@ class Jogar:
         self._desenhar_tally(cad_x + 23, cad_y + 11, self.jogador1.pontuacao_raios, 12)
         self._desenhar_tally(cad_x + 23, cad_y + 19, self.jogador2.pontuacao_raios, 8)
         
+    def _desenhar_E(self):
+        pyxel.text(8, 114 , "[E] Est.", 7)
+
 
         
     def draw(self):
         pyxel.cls(3)
+        self.audio.desenhar()
 
         self._desenhar_jogadores()
 
@@ -926,6 +999,9 @@ class Jogar:
         self._desenhar_monte()
         self._desenhar_contador_monte()
         self._desenhar_caderno()
+
+        # Mostrar o "E"
+        self._desenhar_E()
 
         # As 5 cartas (3 da mão + a carta rotacionada), usando o recorte
         for carta in self.cartas_mesa:
@@ -952,7 +1028,8 @@ class JogoBisca:
         self.cenariosJogo = {
             "Menu Inicial": MenuInicial(),
             "Jogar": Jogar(),
-            "Estatisticas": TelaEstatisticas()
+            "Estatisticas": TelaEstatisticas(),
+            "Creditos" : TelaCreditos()
         }
         self.cenarioAtual = "Menu Inicial"
         pyxel.run(self.update, self.draw)

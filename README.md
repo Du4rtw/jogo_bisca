@@ -111,7 +111,7 @@ Ou seja, o Bot avalia o risco, o custo de cada carta e o que vale a pena gastar 
 ### Instalação
 1. Clone o repositório e entre na pasta:
 ```bash
-   git clone <url-do-repositorio>
+   git clone https://github.com/Du4rtw/jogo_bisca.git
    cd jogo_bisca
 ```
 2. Instale as dependências:

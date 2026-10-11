@@ -6,9 +6,6 @@ from scripts.tela_estatisticas import TelaEstatisticas
 from audio.gerenciador import GerenciadorAudio
 from scripts.tela_creditos import TelaCreditos
 
-
-
-
 #1 "partida" = quem conseguir vencer 4 rodadas primeiro;
 #1 "Rodada" é composto por 20 jogadas de cada (acabar o baralho);
 #Cada "jogada" é 1 carta escolhida por cada jogador para ir a mesa;

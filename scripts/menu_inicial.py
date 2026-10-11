@@ -1,8 +1,5 @@
 import pyxel
 
-
-
-
 class MenuInicial:
     def __init__(self):
         pass

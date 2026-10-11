@@ -1,13 +1,10 @@
 import pyxel
 
-
-
-
 class TelaCreditos:
     def __init__(self):
         # Botão voltar
         self.btn_x, self.btn_y, self.btn_w, self.btn_h = 118, 106, 38, 10
-        pyxel.images[1].load(0, 0, "Creditos.png")
+        pyxel.images[1].load(0, 0, "resources/Creditos.png")
 
     def _clique_voltar(self):
         return (pyxel.btnp(pyxel.MOUSE_BUTTON_LEFT)

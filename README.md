@@ -72,5 +72,56 @@ Cada naipe soma 30 pontos, então há 120 pontos em jogo por raio. Quem fizer ma
 ---
 
 ## STEAM
+ 
+A disciplina de Algoritmos e Estruturas de Dados I da FURG propôs o desenvolvimento de um jogo como trabalho, utilizando a biblioteca Pyxel. O jogo deve, obrigatoriamente, integrar conceitos relacionados a STEAM (*Science, Technology, Engineering, Arts and Mathematics*). A seguir, como isso foi feito neste projeto.
+ 
+### Ciência e Matemática: estatísticas e probabilidade
+O jogo guarda o seu histórico em um arquivo e transforma esses números em uma tela de estatísticas, inspirada em uma caderneta de anotações:
+ 
+- partidas e raios ganhos, com a taxa de aproveitamento;
+- média de pontos por raio;
+- eficiência das biscas, calculada pela fórmula: **eficiência = pontos capturados nas vazas em que você jogou bisca ÷ soma da força das biscas jogadas**. Quanto maior o valor, mais pontos cada bisca gasta rendeu;
+- sortômetro, que compara quão fortes foram as cartas que cada lado recebeu e mostra o quanto da partida foi sorte e o quanto foi decisão;
+- maior combo de vazas seguidas vencidas e sua respectiva pontuação.
+Isso trabalha porcentagens, razões, médias e probabilidade. A bisca é um jogo de memória, estratégia e sorte: a sorte decide as cartas distribuídas, mas lembrar quais cartas já saíram, calcular a chance de o adversário ter uma carta forte e decidir quando vale gastar uma bisca dependem de pensamento crítico e de uma leitura probabilística do jogo. As estatísticas ajudam o jogador a enxergar o efeito de suas próprias escolhas.
+ 
+### Tecnologia e Engenharia: a lógica de decisão do Bot
+O Bot não joga ao acaso. Ele segue regras de decisão que imitam o raciocínio de um jogador de bisca:
+ 
+- **Jogando primeiro:** ele abre com uma carta "segura" (fraca e sem ser bisca) e só gasta bisca se não tiver outra opção.
+- **Jogando em segundo:**
+  - se você jogou bisca, ele descarta algo barato em vez de gastar uma carta forte;
+  - se dá para vencer com o mesmo naipe, ele vence com a menor carta capaz disso;
+  - se você jogou uma carta valiosa que ele não consegue vencer de outra forma, ele usa a menor bisca que tiver;
+  - caso contrário, ele descarta a carta de menor valor.
+Ou seja, o Bot avalia o risco, o custo de cada carta e o que vale a pena gastar em cada vaza.
+ 
+### Arte: baralho espanhol e estética de boteco
+- As cartas se inspiram no baralho espanhol, com quatro naipes e figuras, e os sprites foram desenhados em pixel art.
+- O cenário lembra uma mesa de bar: mesa redonda com borda de madeira e feltro verde, uma caderneta de espiral onde os raios são marcados em riscos (como a contagem de pontos num boteco), e um lápis ao lado.
 
-A disciplina de Algoritmos e Estruturas de Dados I da FURG propôs o desenvolvimento de um jogo como trabalho, utilizando a biblioteca Pyxel. O jogo deve, obrigatoriamente, integrar conceitos relacionados a STEAM (*Science, Technology, Engineering,
+---
+
+## Como instalar e executar
+
+### Requisitos
+- Python 3 (testado com Python 3.14)
+- [Pyxel](https://github.com/kitao/pyxel) 2.9.9
+
+### Instalação
+1. Clone o repositório e entre na pasta:
+```bash
+   git clone https://github.com/Du4rtw/jogo_bisca.git
+   cd jogo_bisca
+```
+2. Instale as dependências:
+```bash
+   python -m pip install -r requirements.txt
+```
+
+### Executando
+```bash
+python jogo_bisca.py
+```
+
+> No Linux/macOS, use `python3` e `python3 -m pip` no lugar de `python` e `python -m pip`.

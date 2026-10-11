@@ -1,7 +1,7 @@
 import json
 import os
 
-ARQUIVO_ESTATISTICAS = "estatisticas.json"
+ARQUIVO_ESTATISTICAS = "resources/estatisticas.json"
 
 PESO_BISCA = 2    # valor * PESO_BISCA, sortometro
 BONUS_BISCA = 2   # biscas valor 0 valem isso de pontos

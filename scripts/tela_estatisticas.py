@@ -1,5 +1,5 @@
 import pyxel
-import estatisticas
+from scripts import estatisticas
 
 COR_FUNDO = 3
 COR_PAPEL = 7

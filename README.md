@@ -99,3 +99,29 @@ Ou seja, o Bot avalia o risco, o custo de cada carta e o que vale a pena gastar 
 ### Arte: baralho espanhol e estética de boteco
 - As cartas se inspiram no baralho espanhol, com quatro naipes e figuras, e os sprites foram desenhados em pixel art.
 - O cenário lembra uma mesa de bar: mesa redonda com borda de madeira e feltro verde, uma caderneta de espiral onde os raios são marcados em riscos (como a contagem de pontos num boteco), e um lápis ao lado.
+
+---
+
+## Como instalar e executar
+
+### Requisitos
+- Python 3 (testado com Python 3.14)
+- [Pyxel](https://github.com/kitao/pyxel) 2.9.9
+
+### Instalação
+1. Clone o repositório e entre na pasta:
+```bash
+   git clone <url-do-repositorio>
+   cd jogo_bisca
+```
+2. Instale as dependências:
+```bash
+   python -m pip install -r requirements.txt
+```
+
+### Executando
+```bash
+python jogo_bisca.py
+```
+
+> No Linux/macOS, use `python3` e `python3 -m pip` no lugar de `python` e `python -m pip`.
